@@ -1,0 +1,21 @@
+kind = "web"
+previewPath = "/"
+title = "ORBIT — News Intelligence Monitor"
+version = "1.0.0"
+id = "artifacts/orbit"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/", "/orbit" ]
+localPort = 22982
+
+[services.development]
+run = "cd /home/runner/workspace/artifacts/orbit && npm install --legacy-peer-deps && node index.js"
+
+[services.env]
+PORT = "22982"

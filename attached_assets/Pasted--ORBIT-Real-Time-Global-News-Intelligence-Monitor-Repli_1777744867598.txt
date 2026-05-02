@@ -1,0 +1,673 @@
+# ORBIT — Real-Time Global News Intelligence Monitor
+### Replit Agent Build Prompt
+
+---
+
+## VISION
+
+Build **ORBIT** — a futuristic, real-time global news intelligence terminal with a live 3D revolving Earth at its center. News events are plotted as glowing coordinate pins on the globe surface. Users click a pin to pull up that story. A deep, multi-axis filter panel lets users surgically tune what they see by topic, region, source type, sentiment, recency, and language. The entire UI is designed to feel like a mission control interface — dark, precise, alive.
+
+This is not a news aggregator wrapper. It is an **intelligence surface** — a tool for people who need to understand *where* things are happening and *why they matter*, not just *what* is being reported.
+
+---
+
+## TECH STACK — NO DEVIATIONS
+
+| Layer | Choice |
+|-------|--------|
+| Runtime | Node.js (latest LTS) |
+| Backend | Express.js |
+| 3D Globe | `three.js` via CDN (`r128`) — `globe.gl` library via CDN |
+| Frontend | Single `public/index.html` — HTML + CSS + vanilla JS |
+| News data | GNews API (free tier) + NewsAPI.org (free tier) — both via server-side proxy |
+| Geocoding cache | Hardcoded country→coordinate map in a `geo.js` module (no external geocoding API) |
+| Environment | Secrets: `GNEWS_API_KEY`, `NEWS_API_KEY` in Replit Secrets |
+| Port | `process.env.PORT || 3000` |
+
+**Do not use React, Vue, Webpack, TypeScript, Tailwind, or any CSS framework.** No build step. Everything runs directly with `node index.js`.
+
+Install exactly:
+
+```bash
+npm install express node-fetch@2 cors
+```
+
+`globe.gl`, `three.js`, and `d3` are loaded via `<script>` CDN tags in `index.html`. No other frontend dependencies.
+
+---
+
+## FILE STRUCTURE
+
+```
+/
+├── index.js          # Express server + all API proxy routes
+├── news.js           # Fetch, normalize, deduplicate news from both APIs
+├── geo.js            # Country name → { lat, lng } lookup table (hardcoded, ~180 entries)
+├── filters.js        # Server-side filter application logic
+├── public/
+│   └── index.html    # Entire frontend: HTML + CSS + JS
+├── package.json
+└── .replit           # run = "node index.js"
+```
+
+---
+
+## VISUAL IDENTITY & AESTHETIC
+
+**Codename aesthetic: Dark Observatory**
+
+The UI must feel like a classified intelligence briefing room — not a consumer app, not a dashboard template.
+
+### Color System
+
+```css
+--void: #010409;           /* deepest background — near-black blue */
+--space: #0d1117;          /* secondary background */
+--panel: #161b22;          /* card/panel surfaces */
+--panel-elevated: #21262d; /* raised panels */
+--border: #30363d;         /* subtle borders */
+--border-bright: #484f58;  /* active borders */
+--pulse: #00d9ff;          /* primary accent — electric cyan */
+--pulse-dim: rgba(0,217,255,0.15); /* glow fills */
+--signal: #39ff14;         /* positive/live indicator — neon green */
+--warn: #ff6b35;           /* alert/high-priority — deep orange */
+--critical: #ff2d55;       /* breaking/critical — red */
+--text-primary: #e6edf3;   /* main readable text */
+--text-secondary: #8b949e; /* secondary metadata */
+--text-ghost: #3d444d;     /* disabled / placeholder */
+--globe-land: #1a2744;     /* globe landmass fill */
+--globe-water: #070d1a;    /* globe ocean fill */
+--globe-border: #1e3a5f;   /* country borders */
+```
+
+### Typography
+
+Load via Google Fonts (two imports only):
+- **Display/UI:** `Space Grotesk` — used for headlines, labels, filter names
+- **Data/Code:** `JetBrains Mono` — used for coordinates, timestamps, source URLs, counts
+
+No other fonts. Apply globally:
+
+```css
+body { font-family: 'Space Grotesk', sans-serif; }
+code, .mono, .timestamp, .coords { font-family: 'JetBrains Mono', monospace; }
+```
+
+### Motion Principles
+
+- Globe rotates continuously at `0.08 deg/frame` on Y-axis. Pause on hover. Resume on mouse-leave.
+- News pins pulse with a CSS `@keyframes` scale + opacity loop (period: 2.4s, staggered by index mod 5).
+- Breaking/critical pins emit a ripple animation — 3 concentric rings expanding outward, fading to transparent.
+- Panel open/close: `transform: translateX()` slide with `cubic-bezier(0.16, 1, 0.3, 1)` — 280ms.
+- Filter chip toggle: `background` and `box-shadow` transition `160ms ease`.
+- Story cards enter the list with `opacity: 0 → 1` + `transform: translateY(12px) → 0`, staggered by `40ms * index`.
+- Skeleton loaders (pulsing shimmer) during fetch — never show a blank panel.
+- All transitions respect `prefers-reduced-motion: reduce` — disable animations, keep functionality.
+
+---
+
+## GLOBE IMPLEMENTATION
+
+Use the `globe.gl` library. Initialize with:
+
+```js
+const Globe = GlobeGL()
+  .globeImageUrl(null)          // no texture — render procedurally
+  .backgroundColor('rgba(0,0,0,0)')
+  .showAtmosphere(true)
+  .atmosphereColor('#00d9ff')
+  .atmosphereAltitude(0.15)
+  .polygonsData(countriesGeoJSON)  // load world countries GeoJSON from unpkg CDN
+  .polygonCapColor(() => '#1a2744')
+  .polygonSideColor(() => '#0d1a33')
+  .polygonStrokeColor(() => '#1e3a5f')
+  .polygonAltitude(0.006)
+  .pointsData(newsPoints)
+  .pointLat(d => d.lat)
+  .pointLng(d => d.lng)
+  .pointColor(d => severityColor(d.severity))
+  .pointAltitude(d => 0.01 + (d.score * 0.04))
+  .pointRadius(d => 0.4 + (d.score * 0.3))
+  .pointLabel(d => `<div class="globe-tooltip">${d.title}</div>`)
+  .onPointClick(d => openStoryPanel(d));
+```
+
+Load country polygons GeoJSON from:
+`https://unpkg.com/world-atlas@2/countries-110m.json`
+Convert topojson → geojson client-side using `topojson-client` CDN.
+
+**Globe container:** `position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;`
+
+Globe renders full-bleed behind all UI panels. Panels are layered on top with `z-index > 0` and use `backdrop-filter: blur(20px) saturate(180%)` with semi-transparent backgrounds so the globe remains visible beneath.
+
+### Pin Types & Colors
+
+| Severity | Color | Animation |
+|----------|-------|-----------|
+| `critical` | `#ff2d55` | Ripple rings, fast pulse |
+| `high` | `#ff6b35` | Medium pulse |
+| `moderate` | `#00d9ff` | Slow pulse |
+| `low` | `#39ff14` | Static glow |
+
+Severity is derived server-side: `critical` if source is major wire (Reuters, AP, BBC) AND published < 2 hours ago. `high` if < 6 hours. `moderate` if < 24 hours. `low` otherwise.
+
+### Globe Interaction
+
+- **Drag:** Rotate (built into globe.gl).
+- **Scroll:** Zoom (built into globe.gl). Clamp zoom: min altitude `1.5`, max `4.0`.
+- **Click pin:** Open Story Panel (right side drawer).
+- **Click empty ocean/land:** Close Story Panel if open.
+- **Double-click country:** Filter news to that country only (apply to filter state).
+
+---
+
+## LAYOUT ARCHITECTURE
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  TOPBAR (z:100) — Logo | Live ticker | Clock | Settings      │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│         🌍 GLOBE (z:0) — Full-bleed, always visible         │
+│                                                              │
+│  ┌──────────────┐                      ┌───────────────────┐ │
+│  │ FILTER PANEL │                      │   STORY PANEL     │ │
+│  │ (z:50, left) │                      │   (z:50, right)   │ │
+│  │              │                      │                   │ │
+│  └──────────────┘                      └───────────────────┘ │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  NEWS FEED STRIP (z:50, bottom) — horizontal scroll   │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+All panels use `position: fixed` and are layered over the globe. None obscure the globe center — they hug the screen edges.
+
+---
+
+## TOPBAR
+
+`height: 52px`, full width, `background: rgba(1,4,9,0.85)`, `backdrop-filter: blur(20px)`.
+
+Left section:
+- **ORBIT** wordmark in `Space Grotesk 600` + a small animated orbital ring SVG icon next to it.
+- Version tag: `v1.0 LIVE` in `JetBrains Mono`, `#39ff14`, 10px, with a blinking dot before it.
+
+Center section:
+- **Breaking news ticker** — horizontal auto-scrolling marquee of the 5 most recent `critical` headlines. Each item separated by ` ◆ `. Clicking a headline opens that story in the Story Panel.
+- If no critical news: show `"ALL CLEAR — No critical events in the last 6 hours"` in `#8b949e`.
+
+Right section:
+- **Live UTC clock** — `JetBrains Mono`, updates every second: `UTC 14:23:07`
+- **Total stories count:** `847 stories monitored` — updates on each refresh cycle.
+- **Refresh status:** `↻ Last updated 2m ago` — shows time since last API fetch.
+- **Filter toggle button:** Opens/closes Filter Panel. Shows active filter count as a badge: `⚙ Filters (3)`.
+
+---
+
+## FILTER PANEL (Left Drawer)
+
+`width: 320px`, slides in from left. `background: rgba(13,17,22,0.95)`, `backdrop-filter: blur(24px)`, `border-right: 1px solid var(--border)`.
+
+Header: `SIGNAL FILTERS` in `Space Grotesk 500`, `letter-spacing: 0.12em`, 11px, `--text-secondary`. A `✕` close button top-right.
+
+Filters are organized into labeled sections. Each section has a 1px border-top separator.
+
+### Filter Sections
+
+#### 1. KEYWORD SEARCH
+Full-width text input. `background: var(--panel-elevated)`, `border: 1px solid var(--border)`, `color: var(--text-primary)`, `font-family: JetBrains Mono`. Placeholder: `"Search signals..."`.
+
+Support boolean syntax client-side:
+- `AI chip` → both words must appear
+- `"climate deal"` → exact phrase match
+- `AI OR climate` → either word
+- `-war` → exclude this word
+
+Parse query into a filter object before sending to server. Document the syntax below the input field in a collapsed `?` tooltip.
+
+#### 2. TOPIC CLUSTERS
+Multi-select chip grid. Topics:
+
+```
+Technology   AI & ML      Geopolitics  Economy
+Science      Climate      Defense      Health
+Energy       Space        Cyber        Finance
+Law & Policy Markets      Culture      Conflict
+```
+
+Chips: `background: var(--panel)`, `border: 1px solid var(--border)`. Selected: `background: var(--pulse-dim)`, `border-color: var(--pulse)`, `color: var(--pulse)`. Smooth 160ms transition.
+
+"Select All" / "Clear All" links in `10px` `--text-secondary` above the grid.
+
+#### 3. GEOGRAPHIC SCOPE
+Three modes, toggled by a segmented control (`GLOBAL` / `REGION` / `COUNTRY`):
+
+- **GLOBAL:** No geographic filter.
+- **REGION:** Dropdown multi-select: Africa, Asia-Pacific, Central Asia, Europe, Latin America, Middle East, North America, Oceania, South Asia.
+- **COUNTRY:** Searchable text input with autocomplete dropdown. Populated from the `geo.js` country list. Multiple countries can be added as removable tags.
+
+#### 4. SOURCE TYPE
+Multi-select chips:
+`Wire Services` `Newspapers` `Broadcast` `Digital-Native` `Government` `NGO/Think Tank` `Academic`
+
+Each maps server-side to a domain allowlist (see `news.js` normalization).
+
+#### 5. LANGUAGE
+Pill multi-select: `English` `Spanish` `French` `Arabic` `Mandarin` `Portuguese` `German` `Hindi` `Russian` `Japanese`
+
+Default: `English` pre-selected. Deselecting all = show all languages.
+
+#### 6. RECENCY WINDOW
+Horizontal slider with snap points:
+`1h` → `6h` → `24h` → `48h` → `7d` → `30d`
+
+Display selected value prominently above slider in `JetBrains Mono`. Default: `24h`.
+
+#### 7. SENTIMENT SIGNAL
+Three-way toggle: `ALL` / `NEUTRAL` / `CRITICAL`
+
+Sentiment is tagged server-side by simple heuristic: if title or description contains words from a `CRITICAL_KEYWORDS` list (war, attack, collapse, crisis, earthquake, explosion, killed, sanctions, outbreak, arrested, missile, coup), tag as CRITICAL. Otherwise NEUTRAL.
+
+This is intentionally simple — document it. Do not overclaim sentiment analysis.
+
+#### 8. STORY VOLUME THRESHOLD
+Slider: `1` → `50` — filter to stories where at least N sources have covered the same event (deduplication cluster size). Labeled: `"Coverage depth: 3+ sources"`. Default: `1`.
+
+#### 9. SAVE PROFILE
+Text input: `"Profile name"` + `SAVE` button. Saves current filter state to `localStorage` as a named JSON object. Below the save controls, render up to 5 saved profiles as clickable chips that restore state. Each chip has an `✕` to delete.
+
+Filter Panel footer:
+`APPLY FILTERS` — primary cyan button, full width.
+`RESET ALL` — text link in `--text-secondary`.
+
+Filters apply immediately on change (debounced 400ms) AND on explicit APPLY. The reset clears all filters and reloads default state.
+
+---
+
+## STORY PANEL (Right Drawer)
+
+`width: 400px`, slides in from right on pin click. Same blur/background as Filter Panel.
+
+### Panel Header
+- Category tag pill (e.g., `⚡ CRITICAL` or `◉ TECHNOLOGY`) with appropriate color
+- Published timestamp: `JetBrains Mono`, `--text-secondary`
+- Country + region label with a small flag emoji
+- Coordinates: `JetBrains Mono 11px`, `--text-ghost`, e.g., `48.8566°N 2.3522°E`
+- Close `✕` button
+
+### Story Content
+- Headline in `Space Grotesk 600`, 18px, `--text-primary`, full width
+- Source name + domain, `JetBrains Mono 12px`, `--text-secondary`
+- Description paragraph (from API), 14px, `--text-secondary`, `line-height: 1.7`
+- `READ FULL STORY →` link — opens original URL in new tab. Style as a bordered button, NOT a plain anchor.
+- Divider
+
+### Related Coverage
+Label: `SIGNAL CLUSTER — N sources covering this event`
+
+List of up to 6 related stories on the same event (deduplicated cluster from `news.js`). Each list item:
+- Source name (bold) + headline (truncated at 80 chars) on one line
+- Timestamp on second line
+- Click → update the Story Panel content to show that source's version of the story
+
+### Intelligence Tags
+Auto-generated tags from the story's keywords: displayed as small ghost chips below the related coverage. Clicking a tag applies it as a keyword filter (cross-panel action).
+
+### Globe Reaction
+When Story Panel opens, the globe smoothly `pointOfView()` animates to center on the story's coordinates. Altitude eases to `2.0` over `1200ms`.
+
+---
+
+## BOTTOM NEWS FEED STRIP
+
+`height: 180px`, full width, `position: fixed; bottom: 0`, same blur treatment.
+
+Horizontally scrollable row of story cards. Stories sorted by recency, filtered by current filter state.
+
+Each card: `width: 260px`, `flex-shrink: 0`, `background: var(--panel)`, `border: 1px solid var(--border)`, `border-radius: 8px`, `padding: 12px`.
+
+Card contents:
+- Severity dot (colored) + category label
+- Headline truncated at 2 lines
+- Source + timestamp on one row
+- Country/region tag
+
+Click card → open Story Panel for that story + animate globe to location.
+
+Auto-scroll: the strip slowly auto-scrolls right at `0.5px/frame`. Pause on hover. A `←` `→` navigation button pair sits at each end.
+
+Strip header bar (above the cards row): `LIVE FEED — 847 SIGNALS` left-aligned. Right-aligned: sort controls: `RECENCY` | `SEVERITY` | `RELEVANCE` — underline the active sort.
+
+---
+
+## BACKEND — `index.js`
+
+### Routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Serve `public/index.html` |
+| `GET` | `/api/news` | Fetch + filter + return normalized news JSON |
+| `GET` | `/api/headlines` | Return top 5 critical headlines for ticker |
+| `GET` | `/api/health` | Return server uptime + last fetch time + story count |
+
+### Query Parameters for `/api/news`
+
+```
+q         string    keyword query (raw, parsed server-side)
+topics    string    comma-separated topic IDs
+regions   string    comma-separated region names
+countries string    comma-separated country names (ISO 3166-1 alpha-2)
+sources   string    comma-separated source types
+languages string    comma-separated language codes
+from      string    ISO datetime string (recency window start)
+sentiment string    "all" | "critical"
+minSources number   minimum cluster size
+page      number    pagination (default 1)
+limit     number    results per page (default 40, max 100)
+```
+
+### Caching
+
+Implement a simple in-memory cache on the server:
+
+```js
+const cache = {
+  data: null,
+  fetchedAt: null,
+  ttl: 5 * 60 * 1000  // 5 minutes
+};
+```
+
+On every `/api/news` request: if `cache.data` exists and `Date.now() - cache.fetchedAt < cache.ttl`, apply filters to cached data and return. Do not re-fetch the APIs. This prevents rate limit exhaustion.
+
+Force-refresh if query param `?refresh=true` is present (rate-limit this: max 1 force-refresh per 60 seconds per IP).
+
+### Error Handling for API Keys
+
+On startup:
+```js
+const REQUIRED_SECRETS = ['GNEWS_API_KEY', 'NEWS_API_KEY'];
+REQUIRED_SECRETS.forEach(key => {
+  if (!process.env[key]) {
+    console.error(`FATAL: Missing Replit Secret: ${key}`);
+    process.exit(1);
+  }
+});
+```
+
+---
+
+## NEWS MODULE — `news.js`
+
+### Data Sources
+
+**GNews API** (`https://gnews.io/api/v4/top-headlines`):
+- Params: `token`, `lang`, `country`, `topic`, `max=10` (free tier limit per call)
+- Free tier: 100 requests/day. Cache aggressively.
+
+**NewsAPI.org** (`https://newsapi.org/v2/top-headlines`):
+- Params: `apiKey`, `language`, `country`, `category`, `pageSize=20`
+- Free tier: 100 requests/day. Same caching strategy.
+
+Fetch from both APIs in parallel using `Promise.allSettled`. If one fails, use the other's data. If both fail, return the last valid cache with a `"data_stale": true` flag.
+
+### Normalization Schema
+
+Every story from any source is normalized to:
+
+```js
+{
+  id: "sha1-hash-of-title+source",   // dedup key
+  title: string,
+  description: string,               // fallback to title if null
+  url: string,
+  source: {
+    name: string,
+    domain: string,                  // extracted from url
+    type: string                     // "wire" | "newspaper" | "digital" | etc.
+  },
+  publishedAt: ISO string,
+  country: string,                   // ISO 3166-1 alpha-2, inferred if not provided
+  region: string,                    // inferred from country via geo.js
+  lat: number,                       // from geo.js lookup
+  lng: number,                       // from geo.js lookup
+  language: string,                  // ISO 639-1
+  topics: string[],                  // inferred from keyword matching
+  sentiment: "neutral" | "critical",
+  severity: "low" | "moderate" | "high" | "critical",
+  clusterSize: 1,                    // updated in dedup step
+  clusterId: null                    // set in dedup step
+}
+```
+
+### Topic Inference
+
+Maintain a `TOPIC_KEYWORDS` map:
+
+```js
+const TOPIC_KEYWORDS = {
+  'AI & ML': ['artificial intelligence', 'machine learning', 'LLM', 'GPT', 'neural', 'deep learning', 'OpenAI', 'Anthropic', 'Gemini'],
+  'Geopolitics': ['sanctions', 'treaty', 'diplomatic', 'UN', 'NATO', 'bilateral', 'sovereignty'],
+  'Climate': ['climate', 'emissions', 'carbon', 'COP', 'renewable', 'fossil fuel', 'IPCC'],
+  'Conflict': ['war', 'military', 'airstrike', 'troops', 'ceasefire', 'offensive', 'battalion'],
+  'Economy': ['GDP', 'inflation', 'recession', 'central bank', 'Federal Reserve', 'fiscal', 'tariff'],
+  'Health': ['outbreak', 'pandemic', 'WHO', 'vaccine', 'virus', 'epidemic', 'pathogen'],
+  'Cyber': ['cyberattack', 'ransomware', 'data breach', 'hacked', 'malware', 'zero-day'],
+  'Space': ['NASA', 'SpaceX', 'satellite', 'rocket', 'ISS', 'lunar', 'orbit'],
+  // ... complete all 16 topics
+};
+```
+
+Match against `title + description` (case-insensitive). A story can belong to multiple topics.
+
+### Deduplication
+
+After normalizing all stories, group by similarity:
+- Stories from different sources are in the same cluster if their titles share > 60% word overlap (after removing stopwords).
+- Simple implementation: for each story, check against all existing cluster representatives. If Jaccard similarity of title word sets > 0.6, add to that cluster.
+- Set `clusterSize` = number of stories in cluster. Set `clusterId` = representative story's `id`.
+- Return only the representative story per cluster (highest severity, then most recent). Keep full cluster accessible under `clusters[clusterId]` for the Story Panel related coverage.
+
+### Geo Resolution
+
+`geo.js` exports a hardcoded `COUNTRY_COORDS` object mapping ISO alpha-2 codes to `{ lat, lng, name, region }` for all ~180 countries. Also export a `COUNTRY_NAMES` reverse map (name → code) for text matching.
+
+Country inference priority:
+1. API-provided country field
+2. Match country names from `COUNTRY_NAMES` against title + description
+3. Source domain TLD (`.fr` → France, `.de` → Germany, etc.)
+4. Fallback: `{ lat: 0, lng: 0 }` with country `"UNKNOWN"` — these stories appear as pins at the equator/prime meridian intersection and are filtered from the globe (but appear in the feed strip).
+
+---
+
+## GEO.JS — SAMPLE STRUCTURE
+
+```js
+// geo.js
+const COUNTRY_COORDS = {
+  'US': { lat: 37.09, lng: -95.71, name: 'United States', region: 'North America' },
+  'GB': { lat: 51.51, lng: -0.13, name: 'United Kingdom', region: 'Europe' },
+  'CN': { lat: 35.86, lng: 104.19, name: 'China', region: 'Asia-Pacific' },
+  'IN': { lat: 20.59, lng: 78.96, name: 'India', region: 'South Asia' },
+  'DE': { lat: 51.16, lng: 10.45, name: 'Germany', region: 'Europe' },
+  'FR': { lat: 46.23, lng: 2.21, name: 'France', region: 'Europe' },
+  'RU': { lat: 61.52, lng: 105.32, name: 'Russia', region: 'Europe' },
+  'BR': { lat: -14.24, lng: -51.93, name: 'Brazil', region: 'Latin America' },
+  'JP': { lat: 36.20, lng: 138.25, name: 'Japan', region: 'Asia-Pacific' },
+  'AU': { lat: -25.27, lng: 133.78, name: 'Australia', region: 'Oceania' },
+  // ... all ~180 countries
+};
+module.exports = { COUNTRY_COORDS };
+```
+
+---
+
+## FILTERS MODULE — `filters.js`
+
+Export a single function:
+
+```js
+function applyFilters(stories, params) { ... }
+```
+
+Apply in this order:
+1. Keyword (boolean parse → match against `title + description`)
+2. Topics (ANY match — story must have at least one matching topic)
+3. Countries (exact match on `country` field)
+4. Regions (match on `region` field)
+5. Source type (match on `source.type`)
+6. Language (match on `language` field)
+7. Recency (filter `publishedAt > params.from`)
+8. Sentiment (match on `sentiment` field)
+9. Min cluster size (filter `clusterSize >= params.minSources`)
+
+Return filtered array, sorted by `params.sort`:
+- `recency`: `publishedAt` descending
+- `severity`: severity rank descending, then `publishedAt`
+- `relevance`: keyword match score descending (count of keyword occurrences in title), then `publishedAt`
+
+---
+
+## ERROR HANDLING MATRIX
+
+| Scenario | Severity | Handling |
+|----------|----------|----------|
+| Missing API key on startup | Critical | `process.exit(1)` with named key |
+| GNews API down | High | Fall through to NewsAPI only; flag `"partial_data": true` in response |
+| NewsAPI down | High | Fall through to GNews only; flag `"partial_data": true` |
+| Both APIs down | Critical | Serve last valid cache; add `"data_stale": true` + age in response; show banner: `"⚠ Live data unavailable — showing cached signals from Xm ago"` |
+| GNews 429 rate limit | Moderate | Log warning; serve cache; do not retry until TTL expires |
+| NewsAPI 429 rate limit | Moderate | Same as above |
+| Story has no coordinates (UNKNOWN country) | Low | Exclude from globe; include in feed strip with `📍 Location unknown` label |
+| Story URL is null or malformed | Low | Skip story entirely during normalization |
+| Story description is null | Low | Fallback to title as description |
+| Globe.gl fails to initialize | High | Catch error; hide globe container; show full-screen news feed fallback layout; toast: `"3D globe unavailable — showing flat feed mode"` |
+| GeoJSON fails to load from CDN | High | Globe renders without country polygons; ocean + atmosphere still visible; log error |
+| localStorage unavailable (private mode) | Low | Disable Save Profile silently; hide Save Profile section |
+| Filter produces zero results | Low | Show centered message over globe: `"No signals match your filters. Adjust your parameters."` with Reset button |
+| Story cluster has only 1 source | Low | Hide "Signal Cluster" section in Story Panel; show `"No other sources covering this event"` |
+| API response missing required fields | Moderate | Skip story; log `WARN: Skipping malformed story — missing fields` to console |
+| `?refresh=true` called more than once per 60s | Low | Return `429` with `"Refresh rate limited — try again in Xs"` |
+| User saves > 5 profiles | Low | Evict oldest profile; toast `"Oldest profile replaced"` |
+| Viewport narrower than 768px | Moderate | Show a persistent banner: `"ORBIT is optimized for desktop displays. Some features may be limited on this screen."` Do not disable functionality. |
+
+---
+
+## ONBOARDING OVERLAY
+
+On first visit (detect via `localStorage.getItem('orbit_onboarded')`), show a fullscreen overlay:
+
+```
+┌───────────────────────────────────────┐
+│         ◎  ORBIT                      │
+│   Real-Time Global Intelligence       │
+│                                       │
+│   ➊ Spin the globe to explore events │
+│   ➋ Click any pin to read the signal │
+│   ➌ Use filters to tune your feed    │
+│                                       │
+│        [ ENTER ORBIT ]                │
+└───────────────────────────────────────┘
+```
+
+`background: rgba(1,4,9,0.96)`. Overlay fades out on button click. Set `orbit_onboarded: true` in localStorage.
+
+---
+
+## KEYBOARD SHORTCUTS
+
+Display in a `?` modal accessible from the topbar.
+
+| Key | Action |
+|-----|--------|
+| `F` | Toggle Filter Panel |
+| `Escape` | Close open panel |
+| `R` | Reset all filters |
+| `/` | Focus keyword search input |
+| `Space` | Pause/resume globe rotation |
+| `←` `→` | Scroll news feed strip |
+| `G` | Return globe to default view (world overview) |
+
+---
+
+## PERFORMANCE CONSTRAINTS
+
+- Initial page load must render the globe and first batch of pins within **4 seconds** on a standard Replit container.
+- Cap story display at **200 stories** client-side at any time. If filtered result > 200, paginate with a `LOAD MORE` button in the feed strip.
+- Pin rendering: use `globe.gl`'s built-in WebGL — do not render custom HTML elements per pin (this kills performance). Use `pointLabel` for hover tooltips only.
+- Debounce filter input changes at **400ms**.
+- Debounce globe `pointsData` update at **800ms** (avoid repainting globe on every keystroke).
+- Do not fetch APIs on every filter change — filter is applied to the cached dataset client-side. Only re-fetch from the server when the cache is stale.
+
+---
+
+## REPLIT-SPECIFIC CONSTRAINTS
+
+- Use `path.join(process.cwd(), 'public')` for static file serving — never `__dirname`.
+- `"main": "index.js"` in `package.json`. Run command in `.replit`: `node index.js`.
+- `"type": "commonjs"` — use `require()` throughout. Do not mix module systems.
+- `express.static(path.join(process.cwd(), 'public'))` to serve frontend.
+- All external API calls use `node-fetch@2` (CommonJS-compatible). Do not use native `fetch` in Node — verify version first.
+- The globe.gl, three.js, topojson, and d3 scripts are loaded via CDN in `index.html` — no npm installs for these.
+- Sessions are not persisted across Replit restarts — document this in the footer: `"ORBIT cache resets on server restart."`.
+- Use `process.env.PORT || 3000`. Do not hardcode port.
+- Secrets are accessed via `process.env.GNEWS_API_KEY` and `process.env.NEWS_API_KEY`. Remind the user to add both to Replit Secrets before running.
+
+---
+
+## CDN SCRIPT LOAD ORDER (in `index.html`)
+
+```html
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://unpkg.com/globe.gl@2/dist/globe.gl.min.js"></script>
+```
+
+Load order is critical. Load Three.js before globe.gl — globe.gl depends on it at global scope.
+
+---
+
+## DEFINITION OF DONE
+
+The build is complete when all of the following are true:
+
+- [ ] Globe renders, rotates, and shows country polygons on load
+- [ ] News pins appear on globe at correct coordinates with correct severity colors
+- [ ] Clicking a pin opens the Story Panel and animates the globe to that location
+- [ ] All 9 filter types work correctly and update the feed strip in real-time
+- [ ] Keyword boolean syntax (`AND`, `OR`, `-exclude`, `"exact phrase"`) works client-side
+- [ ] Save Profile stores and restores filter state via localStorage
+- [ ] Related coverage cluster shows in Story Panel
+- [ ] Breaking news ticker scrolls in the topbar
+- [ ] Both API keys missing → server refuses to start with clear message
+- [ ] Both APIs down → stale cache serves with warning banner
+- [ ] Zero filter results → graceful empty state with reset CTA
+- [ ] Globe init failure → flat feed fallback renders
+- [ ] Onboarding overlay shows on first visit only
+- [ ] All keyboard shortcuts work
+- [ ] First meaningful paint < 4 seconds on Replit container
+- [ ] Mobile warning banner appears on viewports < 768px
+- [ ] No API keys or raw API responses are ever sent to the frontend
+
+---
+
+## WHAT NOT TO BUILD
+
+- No user accounts or authentication
+- No persistent database
+- No social features (sharing, comments, reactions)
+- No push notifications
+- No historical archive or search-back-in-time
+- No paid API tiers (free tier only)
+- No NLP sentiment model (heuristic keyword list only — do not overclaim)
+- No map view alternative to the globe (globe is the primary interface)
+- No mobile-native layout (desktop-first; mobile gets a warning, not a redesign)
+
+Scope is fixed. Build with depth, polish, and reliability. The globe is the soul of this product — it must be stunning.
+
+---
+
+*ORBIT — Built for Replit 10 Year Buildathon*

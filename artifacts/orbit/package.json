@@ -1,0 +1,22 @@
+{
+  "name": "@workspace/orbit",
+  "version": "1.0.0",
+  "description": "ORBIT — Real-Time Global News Intelligence Monitor",
+  "main": "index.js",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "test": "node --test tests/unit.test.js",
+    "test:verbose": "node --test --reporter=tap tests/unit.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
