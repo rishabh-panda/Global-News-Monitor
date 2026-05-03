@@ -2,390 +2,592 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ORBIT — Global News Intelligence Monitor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="ORBIT — Real-Time Global News Intelligence Monitor. Track breaking news across 180 countries with 16 topic filters, AI-powered story clustering, and live source attribution."/>
+<meta property="og:title" content="ORBIT — Global News Intelligence Monitor"/>
+<meta property="og:description" content="Mission-control interface for monitoring real-time news intelligence across 180 countries and 16 topic categories."/>
+<meta property="og:type" content="website"/>
+<title>ORBIT — Global News Intelligence</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23070c14' stroke='%2300aaff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%2300d4ff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2300aaff'/%3E%3Cellipse cx='16' cy='16' rx='14' ry='6' fill='none' stroke='%2300aaff' stroke-width='1' opacity='.4'/%3E%3C/svg%3E"/>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#070c14;--bg2:#0b1220;--bg3:#0f1a2e;--panel:#0c1525;
-    --border:#1a2d4a;--border2:#223556;
-    --accent:#00aaff;--accent2:#0066cc;--accent3:#00d4ff;
-    --green:#00ff88;--red:#ff3355;--yellow:#ffcc00;--orange:#ff7722;
-    --text:#c8deff;--text2:#7a9cc0;--text3:#3d5a78;
-    --critical:#ff1a3d;--high:#ff6600;--moderate:#ffcc00;--low:#00cc66;
-    --font:'Courier New',monospace;
-  }
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
-  #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070c14;--bg2:#0b1220;--bg3:#0f1a2e;--panel:#0c1525;
+  --border:#1a2d4a;--border2:#223556;
+  --accent:#00aaff;--accent2:#0066cc;--accent3:#00d4ff;
+  --green:#00ff88;--red:#ff3355;--yellow:#ffcc00;--orange:#ff7722;
+  --text:#c8deff;--text2:#7a9cc0;--text3:#3d5a78;
+  --critical:#ff1a3d;--high:#ff6600;--moderate:#ffcc00;--low:#00cc66;
+  --font:'Courier New',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-  /* ── TOPBAR ── */
-  #topbar{
-    display:flex;align-items:center;gap:12px;padding:0 16px;height:44px;
-    background:var(--bg2);border-bottom:1px solid var(--border);
-    flex-shrink:0;z-index:100;
-  }
-  #logo{font-size:18px;font-weight:bold;letter-spacing:4px;color:var(--accent3);text-shadow:0 0 12px var(--accent);white-space:nowrap}
-  #logo span{color:var(--text2);font-size:11px;letter-spacing:2px;margin-left:4px}
-  #status-ring{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;flex-shrink:0}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  #sys-status{font-size:10px;color:var(--text2);white-space:nowrap}
-  .topbar-sep{flex:1}
-  #mode-badge{
-    padding:3px 10px;border:1px solid var(--border2);border-radius:2px;
-    font-size:10px;letter-spacing:2px;color:var(--accent);background:rgba(0,170,255,.07);
-  }
-  #clock{font-size:11px;color:var(--text2);letter-spacing:1px;white-space:nowrap}
-  #refresh-btn{
-    padding:4px 12px;border:1px solid var(--border2);background:transparent;
-    color:var(--accent);font-family:var(--font);font-size:11px;
-    cursor:pointer;letter-spacing:1px;transition:.2s;
-  }
-  #refresh-btn:hover{background:rgba(0,170,255,.12);border-color:var(--accent)}
-  #refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── TOPBAR ── */
+#topbar{
+  display:flex;align-items:center;gap:10px;padding:0 14px;height:44px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  flex-shrink:0;z-index:100;overflow:hidden;
+}
+#logo{font-size:17px;font-weight:bold;letter-spacing:4px;color:var(--accent3);text-shadow:0 0 12px var(--accent);white-space:nowrap;flex-shrink:0}
+#logo span{color:var(--text2);font-size:10px;letter-spacing:2px;margin-left:4px}
+#status-ring{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#sys-status{font-size:10px;color:var(--text2);white-space:nowrap;flex-shrink:0}
+#stale-pill{
+  display:none;padding:2px 8px;border:1px solid rgba(255,204,0,.4);
+  background:rgba(255,204,0,.07);font-size:9px;color:var(--yellow);
+  letter-spacing:1px;white-space:nowrap;flex-shrink:0;
+}
+#stale-pill.visible{display:block}
+.topbar-sep{flex:1;min-width:4px}
+#next-sync{font-size:10px;color:var(--text3);letter-spacing:1px;white-space:nowrap;flex-shrink:0}
+#story-total{font-size:10px;color:var(--text3);letter-spacing:1px;white-space:nowrap;flex-shrink:0}
+#mode-badge{
+  padding:3px 8px;border:1px solid var(--border2);border-radius:2px;
+  font-size:10px;letter-spacing:2px;color:var(--accent);background:rgba(0,170,255,.07);
+  white-space:nowrap;flex-shrink:0;transition:.3s;
+}
+#mode-badge.demo{color:var(--yellow);border-color:rgba(255,204,0,.4);background:rgba(255,204,0,.07)}
+#clock{font-size:11px;color:var(--text2);letter-spacing:1px;white-space:nowrap;flex-shrink:0}
+#kb-btn{
+  padding:3px 8px;border:1px solid var(--border);background:transparent;
+  color:var(--text3);font-family:var(--font);font-size:10px;cursor:pointer;
+  flex-shrink:0;letter-spacing:1px;
+}
+#kb-btn:hover{color:var(--text2);border-color:var(--border2)}
+#refresh-btn{
+  padding:4px 10px;border:1px solid var(--border2);background:transparent;
+  color:var(--accent);font-family:var(--font);font-size:11px;
+  cursor:pointer;letter-spacing:1px;transition:.2s;flex-shrink:0;white-space:nowrap;
+}
+#refresh-btn:hover{background:rgba(0,170,255,.12);border-color:var(--accent)}
+#refresh-btn:disabled{opacity:.4;cursor:not-allowed}
+@keyframes spin{to{transform:rotate(360deg)}}
+#refresh-btn.loading .spin-icon{display:inline-block;animation:spin .8s linear infinite}
 
-  /* ── ALERTS TICKER ── */
-  #ticker-bar{
-    height:30px;display:flex;align-items:center;overflow:hidden;
-    background:rgba(255,26,61,.06);border-bottom:1px solid rgba(255,26,61,.25);
-    flex-shrink:0;
-  }
-  #ticker-label{
-    padding:0 12px;font-size:10px;letter-spacing:2px;color:var(--critical);
-    white-space:nowrap;border-right:1px solid rgba(255,26,61,.3);height:100%;
-    display:flex;align-items:center;background:rgba(255,26,61,.1);
-  }
-  #ticker-content{
-    flex:1;overflow:hidden;white-space:nowrap;
-    animation:ticker 60s linear infinite;
-    font-size:11px;color:var(--text);padding:0 24px;letter-spacing:.5px;
-  }
-  @keyframes ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
-  #ticker-content.paused{animation-play-state:paused}
+/* ── STALE BAR ── */
+#stale-bar{
+  display:none;height:22px;align-items:center;justify-content:center;
+  background:rgba(255,204,0,.06);border-bottom:1px solid rgba(255,204,0,.2);
+  font-size:9px;letter-spacing:2px;color:var(--yellow);flex-shrink:0;gap:12px;
+}
+#stale-bar.visible{display:flex}
 
-  /* ── MAIN BODY ── */
-  #main{display:flex;flex:1;overflow:hidden;min-height:0}
+/* ── ALERTS TICKER ── */
+#ticker-bar{
+  height:28px;display:flex;align-items:center;overflow:hidden;
+  background:rgba(255,26,61,.05);border-bottom:1px solid rgba(255,26,61,.2);
+  flex-shrink:0;
+}
+#ticker-label{
+  padding:0 12px;font-size:9px;letter-spacing:2px;color:var(--critical);
+  white-space:nowrap;border-right:1px solid rgba(255,26,61,.25);height:100%;
+  display:flex;align-items:center;background:rgba(255,26,61,.08);flex-shrink:0;
+}
+#ticker-wrap{flex:1;overflow:hidden;height:100%;display:flex;align-items:center}
+#ticker-content{
+  white-space:nowrap;font-size:11px;color:var(--text);
+  padding:0 24px;letter-spacing:.5px;will-change:transform;
+  animation:ticker 70s linear infinite;
+}
+@keyframes ticker{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
 
-  /* ── FILTER PANEL ── */
+/* ── MAIN ── */
+#main{display:flex;flex:1;overflow:hidden;min-height:0;position:relative}
+
+/* ── FILTER TOGGLE (mobile) ── */
+#filter-toggle-btn{
+  display:none;position:absolute;top:8px;left:8px;z-index:120;
+  padding:5px 10px;background:var(--bg2);border:1px solid var(--border2);
+  color:var(--accent);font-family:var(--font);font-size:10px;cursor:pointer;
+  letter-spacing:1px;
+}
+
+/* ── FILTER PANEL ── */
+#filter-panel{
+  width:218px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.filter-section{padding:7px 13px}
+.filter-title{
+  font-size:9px;letter-spacing:2.5px;color:var(--text3);text-transform:uppercase;
+  padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:7px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.filter-active-dot{
+  width:5px;height:5px;border-radius:50%;background:var(--accent);
+  display:none;flex-shrink:0;box-shadow:0 0 4px var(--accent);
+}
+.filter-active-dot.on{display:block}
+.filter-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  font-family:var(--font);font-size:11px;padding:5px 8px;outline:none;transition:.2s;
+}
+.filter-input:focus{border-color:var(--accent);box-shadow:0 0 0 1px rgba(0,170,255,.18)}
+.filter-select{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  font-family:var(--font);font-size:11px;padding:5px 8px;outline:none;
+}
+.filter-select option{background-color:#0f1a2e;color:#c8deff}
+.chip-group{display:flex;flex-wrap:wrap;gap:3px}
+.chip{
+  padding:2px 7px;border:1px solid var(--border);border-radius:2px;font-size:9px;
+  cursor:pointer;color:var(--text3);background:transparent;font-family:var(--font);
+  transition:.12s;white-space:nowrap;letter-spacing:.5px;
+}
+.chip:hover{border-color:var(--accent2);color:var(--text2)}
+.chip.active{background:rgba(0,170,255,.14);border-color:var(--accent);color:var(--accent3)}
+.chip.critical-chip.active{background:rgba(255,26,61,.14);border-color:var(--critical);color:var(--critical)}
+.chip.high-chip.active{background:rgba(255,102,0,.14);border-color:var(--high);color:var(--high)}
+.chip.moderate-chip.active{background:rgba(255,204,0,.1);border-color:var(--moderate);color:var(--moderate)}
+.chip.low-chip.active{background:rgba(0,204,102,.1);border-color:var(--low);color:var(--low)}
+.filter-sep{height:1px;background:var(--border)}
+#apply-wrap{padding:8px 13px 4px;position:relative}
+#apply-btn{
+  width:100%;padding:6px;border:1px solid var(--accent2);
+  background:rgba(0,170,255,.09);color:var(--accent);font-family:var(--font);
+  font-size:11px;letter-spacing:2px;cursor:pointer;transition:.2s;
+}
+#apply-btn:hover{background:rgba(0,170,255,.18)}
+#filter-badge{
+  position:absolute;top:2px;right:8px;background:var(--critical);color:#fff;
+  font-size:9px;min-width:16px;height:16px;border-radius:8px;
+  display:none;align-items:center;justify-content:center;padding:0 4px;
+  font-family:var(--font);font-weight:bold;
+}
+#filter-badge.visible{display:flex}
+#reset-btn{
+  width:calc(100% - 26px);margin:0 13px 6px;padding:5px;border:1px solid var(--border);
+  background:transparent;color:var(--text3);font-family:var(--font);
+  font-size:9px;letter-spacing:1px;cursor:pointer;
+}
+#reset-btn:hover{border-color:var(--text2);color:var(--text2)}
+#result-count{
+  margin:0 13px 8px;font-size:9px;color:var(--text3);letter-spacing:1px;text-align:center;min-height:14px;
+}
+
+/* ── SEARCH HELP ── */
+.q-wrap{position:relative}
+#q-help{
+  display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;
+  background:var(--bg2);border:1px solid var(--border2);padding:10px 12px;
+  z-index:250;font-size:9px;line-height:2;color:var(--text2);
+}
+#q-help.visible{display:block}
+#q-help b{color:var(--accent3)}
+#q-help-toggle{
+  float:right;background:none;border:none;color:var(--text3);
+  font-family:var(--font);font-size:9px;cursor:pointer;padding:0;
+}
+#q-help-toggle:hover{color:var(--accent)}
+
+/* ── GLOBE AREA ── */
+#globe-area{flex:1;position:relative;overflow:hidden;min-width:0;background:var(--bg)}
+#globe-container{position:absolute;inset:0;width:100%;height:100%}
+#flat-map-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+#globe-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;
+}
+#globe-coords{
+  position:absolute;bottom:10px;left:12px;font-size:9px;color:var(--text3);letter-spacing:1px;
+}
+#globe-info{
+  position:absolute;top:10px;left:12px;font-size:10px;color:var(--text3);
+  letter-spacing:.5px;line-height:2;max-width:calc(100% - 180px);
+}
+#info-hovered{
+  font-size:11px;color:var(--text);
+  text-shadow:0 0 8px rgba(0,0,0,.8);letter-spacing:.3px;
+}
+#story-count-badge{
+  position:absolute;bottom:10px;right:12px;font-size:9px;color:var(--text2);
+  letter-spacing:1px;background:rgba(7,12,20,.75);padding:3px 10px;border:1px solid var(--border);
+}
+.loading-screen{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:var(--bg);z-index:50;gap:14px;
+}
+.loading-title{font-size:22px;letter-spacing:8px;color:var(--accent3);text-shadow:0 0 20px var(--accent)}
+.loading-sub{font-size:10px;letter-spacing:3px;color:var(--text2)}
+.loading-bar{width:200px;height:2px;background:var(--border);overflow:hidden}
+.loading-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent3));animation:load 2s ease-in-out}
+@keyframes load{0%{width:0}100%{width:100%}}
+
+/* ── STORY PANEL ── */
+#story-panel{
+  width:300px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#panel-header{
+  padding:9px 13px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;gap:8px;flex-shrink:0;
+}
+#panel-title{font-size:9px;letter-spacing:2.5px;color:var(--text3);flex:1}
+#panel-story-count{font-size:9px;color:var(--text3);letter-spacing:.5px;white-space:nowrap}
+#panel-sort{
+  background:transparent;border:1px solid var(--border);color:var(--text2);
+  font-family:var(--font);font-size:9px;cursor:pointer;outline:none;padding:2px 4px;
+}
+#panel-sort option{background-color:#0f1a2e;color:#c8deff}
+#story-list{flex:1;overflow-y:auto;min-height:0}
+
+/* ── STORY CARDS ── */
+.story-card{
+  padding:9px 13px 9px 16px;border-bottom:1px solid var(--border);cursor:pointer;
+  transition:.12s;position:relative;border-left:3px solid transparent;
+}
+.story-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transition:.12s;
+}
+.story-card.sev-l-critical::before{background:var(--critical)}
+.story-card.sev-l-high::before{background:var(--high)}
+.story-card.sev-l-moderate::before{background:var(--moderate)}
+.story-card.sev-l-low::before{background:rgba(0,204,102,.4)}
+.story-card:hover{background:rgba(0,170,255,.04)}
+.story-card.active{background:rgba(0,170,255,.09)}
+.story-card.active::before{background:var(--accent)!important}
+.story-card-sev{position:absolute;top:9px;right:9px;width:6px;height:6px;border-radius:50%}
+.sev-critical{background:var(--critical);box-shadow:0 0 5px var(--critical)}
+.sev-high{background:var(--high);box-shadow:0 0 4px var(--high)}
+.sev-moderate{background:var(--moderate)}
+.sev-low{background:var(--low)}
+.story-card-meta{font-size:9px;color:var(--text3);letter-spacing:.3px;margin-bottom:4px;display:flex;gap:6px;align-items:center}
+.story-card-title{font-size:11px;color:var(--text);line-height:1.45;padding-right:14px}
+.story-card-topics{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px}
+.topic-tag{font-size:8px;padding:1px 5px;border:1px solid var(--border2);color:var(--text3);letter-spacing:.3px}
+.story-card-cluster{font-size:8px;color:var(--accent);margin-top:4px;letter-spacing:.3px}
+.source-type-wire{color:var(--yellow)}
+.source-type-broadcast{color:var(--accent)}
+.source-type-newspaper{color:var(--green)}
+.source-type-digital{color:var(--text2)}
+.source-type-government{color:var(--orange)}
+.source-type-ngo{color:var(--high)}
+.source-type-academic{color:var(--accent3)}
+
+/* ── EMPTY / ERROR STATE ── */
+#empty-state,#error-state{
+  display:none;padding:40px 20px;text-align:center;
+}
+#empty-state.visible,#error-state.visible{display:block}
+.state-icon{font-size:22px;margin-bottom:12px;opacity:.4}
+.state-title{font-size:10px;letter-spacing:2px;color:var(--text3);margin-bottom:8px}
+.state-sub{font-size:9px;color:var(--text3);line-height:1.8;margin-bottom:12px}
+.state-btn{
+  padding:5px 16px;border:1px solid var(--border2);background:transparent;
+  color:var(--text2);font-family:var(--font);font-size:10px;cursor:pointer;
+  letter-spacing:1px;
+}
+.state-btn:hover{border-color:var(--accent);color:var(--accent)}
+#error-state .state-title{color:var(--red)}
+#error-state .state-btn{border-color:rgba(255,51,85,.4);color:var(--red)}
+#error-state .state-btn:hover{border-color:var(--red)}
+
+/* ── LOAD MORE ── */
+#load-more-btn{
+  padding:9px;text-align:center;font-size:9px;letter-spacing:2px;
+  color:var(--text3);cursor:pointer;border-top:1px solid var(--border);
+  display:none;flex-shrink:0;
+}
+#load-more-btn:hover{color:var(--accent);background:rgba(0,170,255,.04)}
+
+/* ── DETAIL MODAL ── */
+#story-detail{
+  position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+  background:rgba(7,12,20,.88);backdrop-filter:blur(4px);
+}
+#story-detail.open{display:flex}
+#detail-card{
+  background:var(--bg2);border:1px solid var(--border2);max-width:640px;width:92%;
+  max-height:82vh;overflow-y:auto;padding:22px;position:relative;
+}
+#detail-sev-bar{height:3px;margin:-22px -22px 18px;transition:.3s}
+#detail-close{
+  position:absolute;top:10px;right:10px;background:none;border:none;
+  color:var(--text2);font-size:18px;cursor:pointer;font-family:var(--font);
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+}
+#detail-close:hover{color:var(--text);background:rgba(255,255,255,.05)}
+#detail-title{font-size:14px;color:var(--text);line-height:1.45;margin-bottom:12px;padding-right:24px}
+#detail-meta{
+  font-size:10px;color:var(--text2);margin-bottom:14px;line-height:1.9;
+  display:grid;grid-template-columns:80px 1fr;gap:0 8px;
+}
+#detail-meta .meta-key{color:var(--text3);letter-spacing:.5px}
+#detail-desc{
+  font-size:11px;color:var(--text2);line-height:1.75;margin-bottom:14px;
+  border-left:2px solid var(--border2);padding-left:12px;
+}
+#detail-topics{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
+#detail-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#detail-link{
+  display:inline-block;padding:6px 16px;border:1px solid var(--accent2);
+  color:var(--accent);font-family:var(--font);font-size:11px;letter-spacing:1px;
+  text-decoration:none;
+}
+#detail-link:hover{background:rgba(0,170,255,.14)}
+#detail-link.disabled{opacity:.35;pointer-events:none;border-color:var(--border)}
+#detail-cluster{margin-top:16px;border-top:1px solid var(--border);padding-top:12px}
+#detail-cluster-title{font-size:9px;letter-spacing:2.5px;color:var(--text3);margin-bottom:8px}
+.cluster-story{
+  padding:6px 0;border-bottom:1px solid var(--border);font-size:10px;
+  color:var(--text2);line-height:1.4;cursor:pointer;display:flex;gap:8px;
+}
+.cluster-story:hover{color:var(--text)}
+.cluster-story:last-child{border-bottom:none}
+.cluster-src{color:var(--text3);white-space:nowrap}
+
+/* ── KEYBOARD HELP ── */
+#keyboard-help{
+  display:none;position:fixed;bottom:44px;right:14px;z-index:300;
+  background:var(--bg2);border:1px solid var(--border2);padding:16px;min-width:220px;
+  box-shadow:0 4px 32px rgba(0,0,0,.5);
+}
+#keyboard-help.open{display:block}
+#keyboard-help-title{font-size:9px;letter-spacing:2.5px;color:var(--text3);margin-bottom:12px}
+.kb-grid{display:grid;grid-template-columns:44px 1fr;row-gap:7px}
+.kb-key{
+  background:rgba(0,170,255,.1);border:1px solid var(--border2);padding:1px 6px;
+  font-size:9px;color:var(--accent);letter-spacing:1px;text-align:center;align-self:center;
+}
+.kb-desc{font-size:10px;color:var(--text2);padding-left:8px;align-self:center}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* ── SEV LEGEND ── */
+#sev-legend{
+  display:flex;gap:12px;padding:5px 13px 8px;border-bottom:1px solid var(--border);
+}
+.sev-legend-item{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--text3);letter-spacing:.5px}
+.sev-legend-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){#story-panel{width:260px}}
+@media(max-width:760px){
   #filter-panel{
-    width:220px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);
-    overflow-y:auto;padding:12px 0;display:flex;flex-direction:column;gap:0;
+    display:none;position:fixed;left:0;top:72px;bottom:0;z-index:150;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
   }
-  .filter-section{padding:8px 14px}
-  .filter-title{
-    font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;
-    padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:8px;
-  }
-  .filter-label{font-size:10px;color:var(--text2);margin-bottom:4px;display:block}
-  .filter-input{
-    width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
-    font-family:var(--font);font-size:11px;padding:5px 8px;outline:none;
-    transition:.2s;
-  }
-  .filter-input:focus{border-color:var(--accent);box-shadow:0 0 0 1px rgba(0,170,255,.2)}
-  .filter-select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:11px;padding:5px 8px;outline:none}
-  .chip-group{display:flex;flex-wrap:wrap;gap:4px}
-  .chip{
-    padding:2px 8px;border:1px solid var(--border);border-radius:2px;font-size:10px;
-    cursor:pointer;color:var(--text2);background:transparent;font-family:var(--font);
-    transition:.15s;white-space:nowrap;
-  }
-  .chip:hover{border-color:var(--accent);color:var(--accent)}
-  .chip.active{background:rgba(0,170,255,.15);border-color:var(--accent);color:var(--accent3)}
-  .chip.critical-chip.active{background:rgba(255,26,61,.15);border-color:var(--critical);color:var(--critical)}
-  .chip.high-chip.active{background:rgba(255,102,0,.15);border-color:var(--high);color:var(--high)}
-  .chip.moderate-chip.active{background:rgba(255,204,0,.12);border-color:var(--moderate);color:var(--moderate)}
-  .chip.low-chip.active{background:rgba(0,204,102,.12);border-color:var(--low);color:var(--low)}
-  .filter-sep{height:1px;background:var(--border);margin:2px 0}
-  #apply-btn{
-    margin:8px 14px;padding:6px;border:1px solid var(--accent2);
-    background:rgba(0,170,255,.1);color:var(--accent);font-family:var(--font);
-    font-size:11px;letter-spacing:2px;cursor:pointer;transition:.2s;
-  }
-  #apply-btn:hover{background:rgba(0,170,255,.2)}
-  #reset-btn{
-    margin:0 14px 8px;padding:5px;border:1px solid var(--border);
-    background:transparent;color:var(--text2);font-family:var(--font);
-    font-size:10px;letter-spacing:1px;cursor:pointer;
-  }
-  #reset-btn:hover{border-color:var(--text2);color:var(--text)}
-  #result-count{
-    margin:0 14px 12px;font-size:9px;color:var(--text3);letter-spacing:1px;text-align:center;
-  }
-
-  /* ── GLOBE AREA ── */
-  #globe-area{flex:1;position:relative;overflow:hidden;min-width:0}
-  #globe-container{width:100%;height:100%}
-  #globe-overlay{
-    position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;
-  }
-  #globe-coords{
-    position:absolute;bottom:12px;left:12px;font-size:9px;color:var(--text3);
-    letter-spacing:1px;
-  }
-  #globe-info{
-    position:absolute;top:12px;left:12px;font-size:9px;color:var(--text3);
-    letter-spacing:1px;line-height:1.8;
-  }
-  #story-count-badge{
-    position:absolute;bottom:12px;right:12px;font-size:10px;color:var(--text2);
-    letter-spacing:1px;background:rgba(7,12,20,.7);padding:4px 10px;border:1px solid var(--border);
-  }
-  .loading-screen{
-    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;background:var(--bg);z-index:50;gap:16px;
-  }
-  .loading-title{font-size:24px;letter-spacing:8px;color:var(--accent3);text-shadow:0 0 20px var(--accent)}
-  .loading-sub{font-size:10px;letter-spacing:4px;color:var(--text2)}
-  .loading-bar{width:200px;height:2px;background:var(--border);overflow:hidden}
-  .loading-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent3));animation:load 2.5s ease-in-out}
-  @keyframes load{0%{width:0}100%{width:100%}}
-  #demo-notice{
-    position:absolute;top:12px;right:12px;background:rgba(255,204,0,.08);
-    border:1px solid rgba(255,204,0,.3);padding:6px 12px;font-size:9px;
-    letter-spacing:1px;color:var(--yellow);max-width:220px;line-height:1.6;
-    display:none;
-  }
-
-  /* ── STORY PANEL ── */
-  #story-panel{
-    width:300px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);
-    overflow-y:auto;display:flex;flex-direction:column;
-  }
-  #panel-header{
-    padding:10px 14px;border-bottom:1px solid var(--border);display:flex;
-    align-items:center;justify-content:space-between;flex-shrink:0;
-  }
-  #panel-title{font-size:9px;letter-spacing:3px;color:var(--text3)}
-  #panel-sort{background:transparent;border:none;color:var(--text2);font-family:var(--font);font-size:10px;cursor:pointer;outline:none}
-  #story-list{flex:1;overflow-y:auto;padding:0}
-  .story-card{
-    padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;
-    transition:.15s;position:relative;
-  }
-  .story-card:hover{background:rgba(0,170,255,.05)}
-  .story-card.active{background:rgba(0,170,255,.1);border-left:2px solid var(--accent)}
-  .story-card-sev{
-    position:absolute;top:10px;right:10px;width:6px;height:6px;border-radius:50%;
-  }
-  .sev-critical{background:var(--critical);box-shadow:0 0 4px var(--critical)}
-  .sev-high{background:var(--high);box-shadow:0 0 4px var(--high)}
-  .sev-moderate{background:var(--moderate)}
-  .sev-low{background:var(--low)}
-  .story-card-meta{font-size:9px;color:var(--text3);letter-spacing:.5px;margin-bottom:4px;display:flex;gap:8px;flex-wrap:wrap}
-  .story-card-title{font-size:11px;color:var(--text);line-height:1.4;padding-right:16px}
-  .story-card-topics{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px}
-  .topic-tag{font-size:9px;padding:1px 5px;border:1px solid var(--border2);color:var(--text3);letter-spacing:.5px}
-  .story-card-cluster{font-size:9px;color:var(--accent);margin-top:4px}
-  .source-type-wire{color:var(--yellow)}
-  .source-type-broadcast{color:var(--accent)}
-  .source-type-newspaper{color:var(--green)}
-  .source-type-digital{color:var(--text2)}
-  .source-type-government{color:var(--orange)}
-  .source-type-ngo{color:var(--high)}
-  .source-type-academic{color:var(--accent3)}
-  #load-more-btn{
-    padding:10px;text-align:center;font-size:10px;letter-spacing:2px;
-    color:var(--text3);cursor:pointer;border-top:1px solid var(--border);
-  }
-  #load-more-btn:hover{color:var(--accent);background:rgba(0,170,255,.05)}
-
-  /* ── DETAIL MODAL ── */
-  #story-detail{
-    position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
-    background:rgba(7,12,20,.85);backdrop-filter:blur(4px);
-  }
-  #story-detail.open{display:flex}
-  #detail-card{
-    background:var(--bg2);border:1px solid var(--border2);max-width:640px;width:90%;
-    max-height:80vh;overflow-y:auto;padding:24px;position:relative;
-  }
-  #detail-close{
-    position:absolute;top:12px;right:12px;background:none;border:none;
-    color:var(--text2);font-size:18px;cursor:pointer;font-family:var(--font);
-  }
-  #detail-close:hover{color:var(--text)}
-  #detail-title{font-size:15px;color:var(--text);line-height:1.4;margin-bottom:12px;padding-right:32px}
-  #detail-meta{font-size:10px;color:var(--text2);margin-bottom:12px;line-height:2;display:grid;grid-template-columns:1fr 1fr;gap:2px}
-  #detail-desc{font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:16px;border-left:2px solid var(--border2);padding-left:12px}
-  #detail-topics{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px}
-  #detail-link{
-    display:inline-block;padding:6px 16px;border:1px solid var(--accent2);
-    color:var(--accent);font-family:var(--font);font-size:11px;letter-spacing:1px;
-    text-decoration:none;
-  }
-  #detail-link:hover{background:rgba(0,170,255,.15)}
-  #detail-cluster{margin-top:16px;border-top:1px solid var(--border);padding-top:12px}
-  #detail-cluster-title{font-size:9px;letter-spacing:3px;color:var(--text3);margin-bottom:8px}
-  .cluster-story{padding:6px 0;border-bottom:1px solid var(--border);font-size:10px;color:var(--text2);line-height:1.4;cursor:pointer}
-  .cluster-story:hover{color:var(--text)}
-  .cluster-story:last-child{border-bottom:none}
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar{width:4px;height:4px}
-  ::-webkit-scrollbar-track{background:var(--bg)}
-  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-  ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
-
-  /* ── RESPONSIVE ── */
-  @media(max-width:900px){
-    #filter-panel{width:180px}
-    #story-panel{width:240px}
-  }
-  @media(max-width:700px){
-    #filter-panel{display:none}
-    #story-panel{width:200px}
-  }
+  #filter-panel.mobile-open{display:flex}
+  #filter-toggle-btn{display:block}
+  #story-total,#next-sync,#stale-pill{display:none!important}
+}
+@media(max-width:540px){
+  #story-panel{width:100%;position:absolute;right:0;top:0;bottom:0;z-index:50}
+  #globe-area{display:none}
+}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- TOPBAR -->
-  <div id="topbar">
-    <div id="logo">ORBIT<span>// NEWS INTELLIGENCE</span></div>
-    <div id="status-ring"></div>
-    <div id="sys-status">SYS NOMINAL</div>
-    <div class="topbar-sep"></div>
-    <div id="mode-badge">MONITOR MODE</div>
-    <div id="clock">--:--:-- UTC</div>
-    <button id="refresh-btn">⟳ REFRESH</button>
-  </div>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div id="logo">ORBIT<span>// INTEL</span></div>
+  <div id="status-ring"></div>
+  <div id="sys-status">INITIALIZING</div>
+  <div id="stale-pill">⚠ DATA STALE</div>
+  <div class="topbar-sep"></div>
+  <div id="story-total"></div>
+  <div id="next-sync"></div>
+  <div id="mode-badge">MONITOR MODE</div>
+  <div id="clock">--:--:-- UTC</div>
+  <button id="kb-btn" title="Keyboard shortcuts (?)">⌨ ?</button>
+  <button id="refresh-btn"><span class="spin-icon">⟳</span> REFRESH</button>
+</div>
 
-  <!-- ALERT TICKER -->
-  <div id="ticker-bar">
-    <div id="ticker-label">⚡ ALERTS</div>
+<!-- STALE DATA BAR -->
+<div id="stale-bar">
+  ⚠ INTELLIGENCE DATA MAY BE STALE — CACHE OVERDUE
+  <button onclick="fetchNews(true)" style="padding:1px 8px;border:1px solid rgba(255,204,0,.4);background:transparent;color:var(--yellow);font-family:var(--font);font-size:9px;cursor:pointer;letter-spacing:1px">FORCE REFRESH</button>
+</div>
+
+<!-- ALERT TICKER -->
+<div id="ticker-bar">
+  <div id="ticker-label">⚡ ALERTS</div>
+  <div id="ticker-wrap">
     <div id="ticker-content">ORBIT INITIALIZING — LOADING INTELLIGENCE FEED...</div>
   </div>
-
-  <!-- MAIN AREA -->
-  <div id="main">
-
-    <!-- FILTER PANEL -->
-    <div id="filter-panel">
-      <div class="filter-section">
-        <div class="filter-title">⬛ KEYWORD SEARCH</div>
-        <input class="filter-input" type="text" id="q" placeholder='e.g. AI OR climate -war "oil deal"' autocomplete="off"/>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◈ TOPICS</div>
-        <div class="chip-group" id="topic-chips"></div>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◉ REGION</div>
-        <div class="chip-group" id="region-chips"></div>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◈ SOURCE TYPE</div>
-        <div class="chip-group" id="source-chips"></div>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◉ LANGUAGE</div>
-        <div class="chip-group" id="lang-chips"></div>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">⚡ SEVERITY</div>
-        <div class="chip-group" id="sev-chips">
-          <button class="chip critical-chip" data-val="critical">CRITICAL</button>
-          <button class="chip high-chip" data-val="high">HIGH</button>
-          <button class="chip moderate-chip" data-val="moderate">MODERATE</button>
-          <button class="chip low-chip" data-val="low">LOW</button>
-        </div>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◷ RECENCY</div>
-        <select class="filter-select" id="recency-select">
-          <option value="">ALL TIME</option>
-          <option value="1h">LAST 1 HOUR</option>
-          <option value="6h">LAST 6 HOURS</option>
-          <option value="24h">LAST 24 HOURS</option>
-          <option value="48h">LAST 48 HOURS</option>
-          <option value="7d">LAST 7 DAYS</option>
-        </select>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">◈ MIN SOURCES</div>
-        <select class="filter-select" id="minsrc-select">
-          <option value="">ANY</option>
-          <option value="2">2+</option>
-          <option value="3">3+</option>
-          <option value="5">5+</option>
-        </select>
-      </div>
-      <div class="filter-sep"></div>
-
-      <div class="filter-section">
-        <div class="filter-title">⬡ SORT BY</div>
-        <select class="filter-select" id="sort-select">
-          <option value="recency">RECENCY</option>
-          <option value="severity">SEVERITY</option>
-          <option value="relevance">RELEVANCE</option>
-        </select>
-      </div>
-
-      <button id="apply-btn">▶ APPLY FILTERS</button>
-      <button id="reset-btn">↺ RESET ALL</button>
-      <div id="result-count"></div>
-    </div>
-
-    <!-- GLOBE -->
-    <div id="globe-area">
-      <div id="loading-screen" class="loading-screen">
-        <div class="loading-title">ORBIT</div>
-        <div class="loading-sub">INITIALIZING INTELLIGENCE SYSTEM</div>
-        <div class="loading-bar"><div class="loading-fill"></div></div>
-        <div style="font-size:9px;color:var(--text3);letter-spacing:2px">LOADING GLOBE ENGINE...</div>
-      </div>
-      <div id="globe-container"></div>
-      <div id="globe-overlay">
-        <div id="globe-info">
-          <div id="info-fetched" style="color:var(--text3)"></div>
-          <div id="info-hovered"></div>
-        </div>
-        <div id="globe-coords"></div>
-        <div id="story-count-badge">── STORIES: <span id="story-count-num">0</span> ──</div>
-        <div id="demo-notice">⚠ DEMO MODE — Using mock intelligence data. Set GNEWS_API_KEY and NEWS_API_KEY for live feeds.</div>
-      </div>
-    </div>
-
-    <!-- STORY PANEL -->
-    <div id="story-panel">
-      <div id="panel-header">
-        <div id="panel-title">⬛ INTELLIGENCE FEED</div>
-        <select id="panel-sort" title="Sort">
-          <option value="recency">⏱ TIME</option>
-          <option value="severity">⚡ SEV</option>
-        </select>
-      </div>
-      <div id="story-list"></div>
-      <div id="load-more-btn" style="display:none">▼ LOAD MORE</div>
-    </div>
-
-  </div>
 </div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <button id="filter-toggle-btn" onclick="document.getElementById('filter-panel').classList.toggle('mobile-open')">☰ FILTERS</button>
+
+  <!-- FILTER PANEL -->
+  <div id="filter-panel">
+
+    <div class="filter-section">
+      <div class="filter-title">
+        ◈ KEYWORD
+        <button id="q-help-toggle" onclick="document.getElementById('q-help').classList.toggle('visible')" title="Search syntax help">?</button>
+        <div class="filter-active-dot" id="dot-q"></div>
+      </div>
+      <div class="q-wrap">
+        <input class="filter-input" type="text" id="q" placeholder='AI OR climate -war "oil deal"' autocomplete="off"/>
+        <div id="q-help">
+          <b>word</b> — must contain &nbsp; <b>OR</b> — either term<br/>
+          <b>-word</b> — exclude &nbsp; <b>"exact phrase"</b><br/>
+          <b>AND</b> — explicit (also implicit between words)
+        </div>
+      </div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◉ TOPICS <div class="filter-active-dot" id="dot-topics"></div></div>
+      <div class="chip-group" id="topic-chips"></div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◉ REGION <div class="filter-active-dot" id="dot-regions"></div></div>
+      <div class="chip-group" id="region-chips"></div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◈ SOURCE TYPE <div class="filter-active-dot" id="dot-sources"></div></div>
+      <div class="chip-group" id="source-chips"></div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◉ LANGUAGE <div class="filter-active-dot" id="dot-languages"></div></div>
+      <div class="chip-group" id="lang-chips"></div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">⚡ SEVERITY <div class="filter-active-dot" id="dot-sentiment"></div></div>
+      <div id="sev-legend">
+        <div class="sev-legend-item"><div class="sev-legend-dot" style="background:var(--critical);box-shadow:0 0 4px var(--critical)"></div>CRIT</div>
+        <div class="sev-legend-item"><div class="sev-legend-dot" style="background:var(--high)"></div>HIGH</div>
+        <div class="sev-legend-item"><div class="sev-legend-dot" style="background:var(--moderate)"></div>MOD</div>
+        <div class="sev-legend-item"><div class="sev-legend-dot" style="background:var(--low)"></div>LOW</div>
+      </div>
+      <div class="chip-group" id="sev-chips" style="margin-top:4px">
+        <button class="chip critical-chip" data-val="critical">CRITICAL</button>
+        <button class="chip high-chip" data-val="high">HIGH</button>
+        <button class="chip moderate-chip" data-val="moderate">MOD</button>
+        <button class="chip low-chip" data-val="low">LOW</button>
+      </div>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◷ RECENCY <div class="filter-active-dot" id="dot-recency"></div></div>
+      <select class="filter-select" id="recency-select">
+        <option value="">ALL TIME</option>
+        <option value="1h">LAST 1H</option>
+        <option value="6h">LAST 6H</option>
+        <option value="24h">LAST 24H</option>
+        <option value="48h">LAST 48H</option>
+        <option value="7d">LAST 7D</option>
+      </select>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">◈ MIN SOURCES <div class="filter-active-dot" id="dot-minsrc"></div></div>
+      <select class="filter-select" id="minsrc-select">
+        <option value="">ANY</option>
+        <option value="2">2+ SOURCES</option>
+        <option value="3">3+ SOURCES</option>
+        <option value="5">5+ SOURCES</option>
+      </select>
+    </div>
+    <div class="filter-sep"></div>
+
+    <div class="filter-section">
+      <div class="filter-title">⬡ SORT BY</div>
+      <select class="filter-select" id="sort-select">
+        <option value="recency">RECENCY</option>
+        <option value="severity">SEVERITY</option>
+        <option value="relevance">RELEVANCE</option>
+      </select>
+    </div>
+
+    <div id="apply-wrap">
+      <button id="apply-btn">▶ APPLY FILTERS</button>
+      <div id="filter-badge"></div>
+    </div>
+    <button id="reset-btn">↺ RESET ALL FILTERS</button>
+    <div id="result-count"></div>
+  </div>
+
+  <!-- GLOBE / MAP AREA -->
+  <div id="globe-area">
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-title">ORBIT</div>
+      <div class="loading-sub">INITIALIZING INTELLIGENCE SYSTEM</div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+      <div style="font-size:9px;color:var(--text3);letter-spacing:2px" id="loading-status">LOADING GLOBE ENGINE...</div>
+    </div>
+    <div id="globe-container"></div>
+    <!-- flat-map-canvas injected here by JS when WebGL unavailable -->
+    <div id="globe-overlay">
+      <div id="globe-info">
+        <div id="info-fetched"></div>
+        <div id="info-hovered"></div>
+      </div>
+      <div id="globe-coords"></div>
+      <div id="story-count-badge">STORIES: <span id="story-count-num">0</span></div>
+    </div>
+    <!-- Demo notice outside pointer-events:none overlay -->
+    <div id="demo-notice" style="display:none;position:absolute;top:10px;right:10px;background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.3);padding:6px 12px;font-size:9px;letter-spacing:1px;color:var(--yellow);max-width:220px;line-height:1.6;z-index:20">
+      ⚠ DEMO MODE — Mock intelligence data active. Add GNEWS_API_KEY + NEWS_API_KEY secrets for live feeds.
+    </div>
+  </div>
+
+  <!-- STORY PANEL -->
+  <div id="story-panel">
+    <div id="panel-header">
+      <div id="panel-title">⬛ INTEL FEED</div>
+      <div id="panel-story-count"></div>
+      <select id="panel-sort" title="Sort order">
+        <option value="recency">⏱ TIME</option>
+        <option value="severity">⚡ SEV</option>
+        <option value="relevance">◎ REL</option>
+      </select>
+    </div>
+    <div id="story-list">
+      <div id="empty-state">
+        <div class="state-icon">◈</div>
+        <div class="state-title">NO STORIES MATCHED</div>
+        <div class="state-sub">Adjust filters or clear the search query to see more results.</div>
+        <button class="state-btn" onclick="resetFilters()">↺ RESET FILTERS</button>
+      </div>
+      <div id="error-state">
+        <div class="state-icon">⚠</div>
+        <div class="state-title">FEED UNAVAILABLE</div>
+        <div class="state-sub" id="error-msg">Could not reach intelligence server.</div>
+        <button class="state-btn" onclick="fetchNews()">↺ RETRY</button>
+      </div>
+    </div>
+    <div id="load-more-btn">▼ LOAD MORE (<span id="load-more-count">0</span> REMAINING)</div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
 
 <!-- STORY DETAIL MODAL -->
 <div id="story-detail">
   <div id="detail-card">
+    <div id="detail-sev-bar"></div>
     <button id="detail-close">✕</button>
     <div id="detail-title"></div>
     <div id="detail-meta"></div>
     <div id="detail-desc"></div>
     <div id="detail-topics"></div>
-    <a id="detail-link" href="#" target="_blank" rel="noopener">↗ READ FULL STORY</a>
+    <div id="detail-actions">
+      <a id="detail-link" href="#" target="_blank" rel="noopener noreferrer">↗ READ FULL STORY</a>
+    </div>
     <div id="detail-cluster" style="display:none">
       <div id="detail-cluster-title">◈ RELATED SOURCES (<span id="cluster-count">0</span>)</div>
       <div id="cluster-list"></div>
@@ -393,7 +595,19 @@
   </div>
 </div>
 
-<!-- globe.gl bundles Three.js internally — do not import Three separately -->
+<!-- KEYBOARD HELP PANEL -->
+<div id="keyboard-help">
+  <div id="keyboard-help-title">KEYBOARD SHORTCUTS</div>
+  <div class="kb-grid">
+    <div class="kb-key">/</div><div class="kb-desc">Focus search</div>
+    <div class="kb-key">R</div><div class="kb-desc">Force refresh</div>
+    <div class="kb-key">J</div><div class="kb-desc">Next story</div>
+    <div class="kb-key">K</div><div class="kb-desc">Previous story</div>
+    <div class="kb-key">Esc</div><div class="kb-desc">Close modal</div>
+    <div class="kb-key">?</div><div class="kb-desc">Toggle this panel</div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/globe.gl@2/dist/globe.gl.min.js"></script>
 <script>
 (function() {
@@ -405,62 +619,96 @@ const STATE = {
   filteredStories: [],
   displayedCount: 0,
   PAGE_SIZE: 40,
-  activeStory: null,
+  activeStoryIdx: -1,
   globe: null,
-  filters: {
-    q: '', topics: [], regions: [], sources: [],
-    languages: [], sentiment: '', recency: '',
-    minSources: '', sort: 'recency',
-  },
+  flatMap: null,
+  flatMapHovered: null,
+  filters: { q:'', topics:[], regions:[], sources:[], languages:[], sentiment:'', recency:'', minSources:'', sort:'recency' },
   fetchedAt: null,
   demo: false,
   partial: false,
+  nextRefreshAt: 0,
+  refreshTimer: null,
+  retryTimer: null,
+  REFRESH_INTERVAL: 5 * 60 * 1000,
 };
 
-const TOPICS = [
-  'AI & ML','Technology','Geopolitics','Economy','Science','Climate',
-  'Defense','Health','Energy','Space','Cyber','Finance','Law & Policy',
-  'Markets','Culture','Conflict',
-];
+const TOPICS = ['AI & ML','Technology','Geopolitics','Economy','Science','Climate','Defense','Health','Energy','Space','Cyber','Finance','Law & Policy','Markets','Culture','Conflict'];
 const REGIONS = ['North America','Europe','Asia-Pacific','Latin America','Middle East','Africa','South Asia','Central Asia','Oceania'];
-const SOURCE_TYPES = ['wire','newspaper','broadcast','digital','government','ngo','academic'];
-const LANGUAGES = [
-  { code: 'en', label: 'EN' }, { code: 'fr', label: 'FR' },
-  { code: 'de', label: 'DE' }, { code: 'es', label: 'ES' },
-  { code: 'ar', label: 'AR' }, { code: 'zh', label: 'ZH' },
-  { code: 'ru', label: 'RU' }, { code: 'ja', label: 'JA' },
+const SOURCE_TYPES = [
+  { code:'wire', label:'WIRE' }, { code:'newspaper', label:'PRINT' },
+  { code:'broadcast', label:'BCAST' }, { code:'digital', label:'DIGITAL' },
+  { code:'government', label:'GOV' }, { code:'ngo', label:'NGO' }, { code:'academic', label:'ACAD' },
 ];
-const SEV_COLOR = { critical: '#ff1a3d', high: '#ff6600', moderate: '#ffcc00', low: '#00cc66' };
-const SEV_RING = { critical: '#ff1a3d', high: '#ff6600', moderate: '#ffcc00', low: '#00cc66' };
+const LANGUAGES = [
+  { code:'en',label:'EN' },{ code:'fr',label:'FR' },{ code:'de',label:'DE' },{ code:'es',label:'ES' },
+  { code:'ar',label:'AR' },{ code:'zh',label:'ZH' },{ code:'ru',label:'RU' },{ code:'ja',label:'JA' },
+];
+const SEV_COLOR = { critical:'#ff1a3d', high:'#ff6600', moderate:'#ffcc00', low:'#00cc66' };
 
-// ── CLOCK ─────────────────────────────────────────────────────────────────
+// ── UTILITIES ─────────────────────────────────────────────────────────────
+function debounce(fn, ms) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatAge(iso) {
+  if (!iso) return '??';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 0) return 'just now';
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year: diff > 7 * 86400 ? 'numeric' : undefined });
+}
+
+function formatCoords(lat, lng) {
+  const latStr = Math.abs(lat).toFixed(2) + (lat >= 0 ? '°N' : '°S');
+  const lngStr = Math.abs(lng).toFixed(2) + (lng >= 0 ? '°E' : '°W');
+  return `${latStr}  ${lngStr}`;
+}
+
+// ── CLOCK + COUNTDOWN ─────────────────────────────────────────────────────
 function updateClock() {
   const now = new Date();
   const h = String(now.getUTCHours()).padStart(2,'0');
   const m = String(now.getUTCMinutes()).padStart(2,'0');
   const s = String(now.getUTCSeconds()).padStart(2,'0');
   document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+
+  if (STATE.nextRefreshAt) {
+    const rem = Math.max(0, STATE.nextRefreshAt - Date.now());
+    const mm = Math.floor(rem / 60000);
+    const ss = String(Math.floor((rem % 60000) / 1000)).padStart(2,'0');
+    const el = document.getElementById('next-sync');
+    if (el) el.textContent = `SYNC ${mm}:${ss}`;
+    if (rem === 0 && STATE.nextRefreshAt > 0) STATE.nextRefreshAt = 0;
+  }
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 // ── CHIP BUILDER ──────────────────────────────────────────────────────────
-function buildChips(containerId, items, stateKey, extraClass) {
+function buildChips(containerId, items, stateKey) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   items.forEach(item => {
     const val = item.code || item;
     const label = item.label || item;
     const btn = document.createElement('button');
-    btn.className = 'chip' + (extraClass ? ' ' + extraClass : '');
+    btn.className = 'chip';
     btn.dataset.val = val;
     btn.textContent = label;
     btn.addEventListener('click', () => {
       const arr = STATE.filters[stateKey];
       const idx = arr.indexOf(val);
-      if (idx === -1) arr.push(val);
-      else arr.splice(idx, 1);
+      if (idx === -1) arr.push(val); else arr.splice(idx, 1);
       btn.classList.toggle('active', arr.includes(val));
+      updateFilterBadge();
     });
     container.appendChild(btn);
   });
@@ -470,14 +718,9 @@ function buildSeverityChips() {
   document.querySelectorAll('#sev-chips .chip').forEach(btn => {
     btn.addEventListener('click', () => {
       const val = btn.dataset.val;
-      if (STATE.filters.sentiment === val) {
-        STATE.filters.sentiment = '';
-        document.querySelectorAll('#sev-chips .chip').forEach(b => b.classList.remove('active'));
-      } else {
-        STATE.filters.sentiment = val;
-        document.querySelectorAll('#sev-chips .chip').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      }
+      STATE.filters.sentiment = STATE.filters.sentiment === val ? '' : val;
+      document.querySelectorAll('#sev-chips .chip').forEach(b => b.classList.toggle('active', b.dataset.val === STATE.filters.sentiment));
+      updateFilterBadge();
     });
   });
 }
@@ -488,34 +731,56 @@ buildChips('source-chips', SOURCE_TYPES, 'sources');
 buildChips('lang-chips', LANGUAGES, 'languages');
 buildSeverityChips();
 
-// ── FILTER APPLY ──────────────────────────────────────────────────────────
-document.getElementById('apply-btn').addEventListener('click', applyFilters);
-document.getElementById('reset-btn').addEventListener('click', resetFilters);
-document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
-document.getElementById('sort-select').addEventListener('change', applyFilters);
-document.getElementById('panel-sort').addEventListener('change', e => {
-  STATE.filters.sort = e.target.value;
-  document.getElementById('sort-select').value = e.target.value;
-  renderStories();
-});
+// ── ACTIVE FILTER TRACKING ────────────────────────────────────────────────
+function getActiveFilterCount() {
+  const f = STATE.filters;
+  return (f.q ? 1 : 0) + f.topics.length + f.regions.length + f.sources.length +
+    f.languages.length + (f.sentiment ? 1 : 0) + (f.recency ? 1 : 0) + (f.minSources ? 1 : 0);
+}
 
+function updateFilterBadge() {
+  const count = getActiveFilterCount();
+  const badge = document.getElementById('filter-badge');
+  badge.textContent = count;
+  badge.classList.toggle('visible', count > 0);
+
+  // Update active dots per section
+  const f = STATE.filters;
+  const dotMap = {
+    'dot-q': !!f.q,
+    'dot-topics': f.topics.length > 0,
+    'dot-regions': f.regions.length > 0,
+    'dot-sources': f.sources.length > 0,
+    'dot-languages': f.languages.length > 0,
+    'dot-sentiment': !!f.sentiment,
+    'dot-recency': !!f.recency,
+    'dot-minsrc': !!f.minSources,
+  };
+  for (const [id, active] of Object.entries(dotMap)) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', active);
+  }
+}
+
+// ── FILTER APPLY / RESET ──────────────────────────────────────────────────
 function applyFilters() {
   STATE.filters.q = document.getElementById('q').value.trim();
   STATE.filters.sort = document.getElementById('sort-select').value;
-  const recencyVal = document.getElementById('recency-select').value;
-  STATE.filters.recency = recencyVal;
+  STATE.filters.recency = document.getElementById('recency-select').value;
   STATE.filters.minSources = document.getElementById('minsrc-select').value;
+  updateFilterBadge();
   fetchNews();
 }
 
 function resetFilters() {
-  STATE.filters = { q: '', topics: [], regions: [], sources: [], languages: [], sentiment: '', recency: '', minSources: '', sort: 'recency' };
+  STATE.filters = { q:'', topics:[], regions:[], sources:[], languages:[], sentiment:'', recency:'', minSources:'', sort:'recency' };
   document.getElementById('q').value = '';
   document.getElementById('recency-select').value = '';
   document.getElementById('minsrc-select').value = '';
   document.getElementById('sort-select').value = 'recency';
   document.getElementById('panel-sort').value = 'recency';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  updateFilterBadge();
   fetchNews();
 }
 
@@ -531,13 +796,27 @@ function buildQueryParams() {
   if (f.minSources) p.set('minSources', f.minSources);
   if (f.sort) p.set('sort', f.sort);
   if (f.recency) {
-    const now = Date.now();
-    const map = { '1h': 3600000, '6h': 21600000, '24h': 86400000, '48h': 172800000, '7d': 604800000 };
-    if (map[f.recency]) p.set('from', new Date(now - map[f.recency]).toISOString());
+    const map = { '1h':3600000,'6h':21600000,'24h':86400000,'48h':172800000,'7d':604800000 };
+    if (map[f.recency]) p.set('from', new Date(Date.now() - map[f.recency]).toISOString());
   }
   p.set('limit', '200');
   return p;
 }
+
+// Wire up controls
+document.getElementById('apply-btn').addEventListener('click', applyFilters);
+document.getElementById('reset-btn').addEventListener('click', resetFilters);
+document.getElementById('q').addEventListener('input', debounce(applyFilters, 400));
+document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+document.getElementById('q').addEventListener('focus', () => updateFilterBadge());
+document.getElementById('sort-select').addEventListener('change', applyFilters);
+document.getElementById('panel-sort').addEventListener('change', e => {
+  STATE.filters.sort = e.target.value;
+  document.getElementById('sort-select').value = e.target.value;
+  renderStories();
+});
+document.getElementById('recency-select').addEventListener('change', () => updateFilterBadge());
+document.getElementById('minsrc-select').addEventListener('change', () => updateFilterBadge());
 
 // ── FETCH ─────────────────────────────────────────────────────────────────
 let fetchController = null;
@@ -545,48 +824,74 @@ let fetchController = null;
 async function fetchNews(forceRefresh) {
   if (fetchController) fetchController.abort();
   fetchController = new AbortController();
+  if (STATE.retryTimer) { clearTimeout(STATE.retryTimer); STATE.retryTimer = null; }
 
   const btn = document.getElementById('refresh-btn');
   btn.disabled = true;
-  btn.textContent = '⟳ LOADING...';
-  document.getElementById('sys-status').textContent = 'FETCHING INTEL...';
+  btn.classList.add('loading');
+  document.getElementById('sys-status').textContent = 'FETCHING...';
+  hideEmptyState();
+  hideErrorState();
 
   try {
     const params = buildQueryParams();
     if (forceRefresh) params.set('refresh', 'true');
     const resp = await fetch('/orbit/news?' + params.toString(), { signal: fetchController.signal });
+
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
-      if (resp.status === 429) throw new Error(errData.error || 'Rate limited');
-      throw new Error(`HTTP ${resp.status}`);
+      if (resp.status === 429) throw new Error(errData.error || 'Rate limited — wait 60s');
+      throw new Error(`HTTP ${resp.status}: ${errData.error || resp.statusText}`);
     }
+
     const data = await resp.json();
     STATE.allStories = data.stories || [];
     STATE.fetchedAt = data.fetchedAt;
     STATE.demo = data.demo || false;
     STATE.partial = data.partial || false;
 
-    document.getElementById('result-count').textContent = `${data.total || 0} STORIES MATCHED`;
-    document.getElementById('story-count-num').textContent = STATE.allStories.length;
-    document.getElementById('demo-notice').style.display = STATE.demo ? 'block' : 'none';
+    // Update stale indicator
+    const isStale = data.stale || false;
+    document.getElementById('stale-bar').classList.toggle('visible', isStale);
+    document.getElementById('stale-pill').classList.toggle('visible', isStale);
 
+    // Update counts
+    document.getElementById('result-count').textContent = `${data.total || 0} MATCHED`;
+    document.getElementById('story-count-num').textContent = STATE.allStories.length;
+    document.getElementById('story-total').textContent = `${STATE.allStories.length} STORIES`;
+
+    // Demo mode UI
+    document.getElementById('demo-notice').style.display = STATE.demo ? 'block' : 'none';
+    const modeBadge = document.getElementById('mode-badge');
+    modeBadge.textContent = STATE.demo ? 'DEMO MODE' : 'MONITOR MODE';
+    modeBadge.classList.toggle('demo', STATE.demo);
+
+    // Sync time
     if (STATE.fetchedAt) {
       const d = new Date(STATE.fetchedAt);
-      document.getElementById('info-fetched').textContent = `SYNC: ${d.toUTCString().replace('GMT','UTC')}`;
+      document.getElementById('info-fetched').textContent =
+        `SYNC: ${d.toUTCString().replace('GMT','UTC')}`;
     }
 
-    document.getElementById('sys-status').textContent = STATE.demo ? 'DEMO MODE' : 'SYS NOMINAL';
+    document.getElementById('sys-status').textContent = STATE.demo ? 'DEMO ACTIVE' : 'SYS NOMINAL';
+
+    // Schedule next refresh
+    STATE.nextRefreshAt = Date.now() + STATE.REFRESH_INTERVAL;
+
     renderStories();
     updateGlobeData();
     await fetchHeadlines();
   } catch (err) {
     if (err.name === 'AbortError') return;
-    console.error('Fetch error:', err);
-    document.getElementById('sys-status').textContent = 'FETCH ERR — RETRYING';
-    setTimeout(() => fetchNews(), 10000);
+    console.error('[ORBIT] Fetch error:', err.message);
+    document.getElementById('sys-status').textContent = 'CONN ERROR';
+    if (!STATE.allStories.length) {
+      showErrorState(err.message);
+    }
+    STATE.retryTimer = setTimeout(() => fetchNews(), 15000);
   } finally {
     btn.disabled = false;
-    btn.textContent = '⟳ REFRESH';
+    btn.classList.remove('loading');
   }
 }
 
@@ -595,51 +900,88 @@ async function fetchHeadlines() {
     const resp = await fetch('/orbit/headlines');
     const data = await resp.json();
     const headlines = data.headlines || [];
-    if (headlines.length === 0) {
-      updateTicker(['ALL CLEAR — NO CRITICAL ALERTS DETECTED']);
+    if (!headlines.length) {
+      updateTicker(['ALL CLEAR — NO CRITICAL ALERTS DETECTED AT THIS TIME']);
     } else {
       updateTicker(headlines.map(h =>
         `⚡ [${h.country||'??'}] ${h.title} — ${h.source?.name || ''} ${formatAge(h.publishedAt)}`
       ));
     }
-  } catch (e) { /* ignore */ }
+  } catch (_) {}
 }
 
 document.getElementById('refresh-btn').addEventListener('click', () => fetchNews(true));
+document.getElementById('kb-btn').addEventListener('click', () =>
+  document.getElementById('keyboard-help').classList.toggle('open')
+);
+
+// Page Visibility API — skip refresh when tab is hidden
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && STATE.nextRefreshAt && Date.now() > STATE.nextRefreshAt) {
+    fetchNews();
+  }
+});
 
 // ── TICKER ────────────────────────────────────────────────────────────────
 function updateTicker(items) {
   const el = document.getElementById('ticker-content');
   el.textContent = items.join('   ◆   ');
+  // Force reflow to restart animation (offsetWidth read forces synchronous layout)
   el.style.animation = 'none';
-  requestAnimationFrame(() => { el.style.animation = ''; el.style.animation = 'ticker 60s linear infinite'; });
+  void el.offsetWidth;
+  el.style.animation = 'ticker 70s linear infinite';
 }
 
 // ── STORY RENDERING ────────────────────────────────────────────────────────
+function hideEmptyState() { document.getElementById('empty-state').classList.remove('visible'); }
+function hideErrorState() { document.getElementById('error-state').classList.remove('visible'); }
+function showEmptyState() { document.getElementById('empty-state').classList.add('visible'); }
+function showErrorState(msg) {
+  document.getElementById('error-msg').textContent = msg || 'Could not reach intelligence server.';
+  document.getElementById('error-state').classList.add('visible');
+}
+
 function renderStories() {
   const list = document.getElementById('story-list');
-  list.innerHTML = '';
+  // Clear all cards but keep state divs
+  list.querySelectorAll('.story-card').forEach(c => c.remove());
   STATE.displayedCount = 0;
 
   const sorted = [...STATE.allStories];
-  if (STATE.filters.sort === 'severity') {
-    const rank = { critical: 4, high: 3, moderate: 2, low: 1 };
-    sorted.sort((a, b) => (rank[b.severity] || 0) - (rank[a.severity] || 0) || new Date(b.publishedAt) - new Date(a.publishedAt));
+  const sortMode = STATE.filters.sort;
+  if (sortMode === 'severity') {
+    const rank = { critical:4, high:3, moderate:2, low:1 };
+    sorted.sort((a,b) => (rank[b.severity]||0) - (rank[a.severity]||0) || new Date(b.publishedAt) - new Date(a.publishedAt));
+  } else if (sortMode === 'relevance' && STATE.filters.q) {
+    // Keep server-ordered relevance sort
   }
   STATE.filteredStories = sorted;
 
+  hideEmptyState();
+  hideErrorState();
+
+  if (!sorted.length) {
+    showEmptyState();
+    document.getElementById('panel-story-count').textContent = '';
+    document.getElementById('load-more-btn').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('panel-story-count').textContent = `${sorted.length}`;
   renderMoreStories();
-  const moreBtn = document.getElementById('load-more-btn');
-  moreBtn.style.display = STATE.filteredStories.length > STATE.PAGE_SIZE ? 'block' : 'none';
+  updateLoadMoreBtn();
 }
 
 function renderMoreStories() {
   const list = document.getElementById('story-list');
   const batch = STATE.filteredStories.slice(STATE.displayedCount, STATE.displayedCount + STATE.PAGE_SIZE);
-  batch.forEach(story => {
+  const frag = document.createDocumentFragment();
+
+  batch.forEach((story, i) => {
     const card = document.createElement('div');
-    card.className = 'story-card';
+    card.className = `story-card sev-l-${story.severity || 'low'}`;
     card.dataset.id = story.id;
+    card.dataset.idx = String(STATE.displayedCount + i);
 
     const sevDot = document.createElement('div');
     sevDot.className = `story-card-sev sev-${story.severity || 'low'}`;
@@ -647,12 +989,15 @@ function renderMoreStories() {
 
     const meta = document.createElement('div');
     meta.className = 'story-card-meta';
-    const sourceClass = `source-type-${story.source?.type || 'digital'}`;
-    meta.innerHTML = `
-      <span class="${sourceClass}">${(story.source?.name || '??').slice(0, 18).toUpperCase()}</span>
-      <span style="color:var(--text3)">${story.country || '??'}</span>
-      <span style="color:var(--text3)">${formatAge(story.publishedAt)}</span>
-    `;
+    const srcType = story.source?.type || 'digital';
+    const srcName = document.createElement('span');
+    srcName.className = `source-type-${srcType}`;
+    srcName.textContent = (story.source?.name || '??').slice(0, 16).toUpperCase();
+    const cty = document.createElement('span');
+    cty.textContent = story.country || '??';
+    const age = document.createElement('span');
+    age.textContent = formatAge(story.publishedAt);
+    meta.append(srcName, cty, age);
     card.appendChild(meta);
 
     const title = document.createElement('div');
@@ -660,7 +1005,7 @@ function renderMoreStories() {
     title.textContent = story.title;
     card.appendChild(title);
 
-    if (story.topics && story.topics.length) {
+    if (story.topics?.length) {
       const topics = document.createElement('div');
       topics.className = 'story-card-topics';
       story.topics.slice(0, 3).forEach(t => {
@@ -673,54 +1018,103 @@ function renderMoreStories() {
     }
 
     if (story.clusterSize > 1) {
-      const cluster = document.createElement('div');
-      cluster.className = 'story-card-cluster';
-      cluster.textContent = `◈ ${story.clusterSize} sources covering this story`;
-      card.appendChild(cluster);
+      const cl = document.createElement('div');
+      cl.className = 'story-card-cluster';
+      cl.textContent = `◈ ${story.clusterSize} sources reporting`;
+      card.appendChild(cl);
     }
 
-    card.addEventListener('click', () => openStoryDetail(story));
-    list.appendChild(card);
+    card.addEventListener('click', () => openStoryDetail(story, parseInt(card.dataset.idx)));
+    frag.appendChild(card);
   });
+
+  // Insert before empty/error state divs
+  const emptyState = document.getElementById('empty-state');
+  list.insertBefore(frag, emptyState);
   STATE.displayedCount += batch.length;
+}
+
+function updateLoadMoreBtn() {
+  const remaining = STATE.filteredStories.length - STATE.displayedCount;
+  const btn = document.getElementById('load-more-btn');
+  btn.style.display = remaining > 0 ? 'block' : 'none';
+  document.getElementById('load-more-count').textContent = remaining;
 }
 
 document.getElementById('load-more-btn').addEventListener('click', () => {
   renderMoreStories();
-  if (STATE.displayedCount >= STATE.filteredStories.length) {
-    document.getElementById('load-more-btn').style.display = 'none';
-  }
+  updateLoadMoreBtn();
 });
 
-// ── STORY DETAIL ───────────────────────────────────────────────────────────
-function openStoryDetail(story) {
-  STATE.activeStory = story;
-  document.querySelectorAll('.story-card').forEach(c => c.classList.toggle('active', c.dataset.id === story.id));
+// ── STORY NAVIGATION ──────────────────────────────────────────────────────
+function navigateStory(dir) {
+  const stories = STATE.filteredStories;
+  if (!stories.length) return;
+  const newIdx = Math.max(0, Math.min(stories.length - 1, STATE.activeStoryIdx + dir));
+  if (newIdx === STATE.activeStoryIdx && STATE.activeStoryIdx !== -1) return;
+  openStoryDetail(stories[newIdx], newIdx);
+  const card = document.querySelector(`.story-card[data-idx="${newIdx}"]`);
+  if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ── STORY DETAIL ──────────────────────────────────────────────────────────
+function openStoryDetail(story, idx) {
+  STATE.activeStoryIdx = idx !== undefined ? idx : -1;
+  document.querySelectorAll('.story-card').forEach(c =>
+    c.classList.toggle('active', c.dataset.id === story.id)
+  );
+
+  // Severity bar
+  const sevBar = document.getElementById('detail-sev-bar');
+  sevBar.style.background = SEV_COLOR[story.severity] || 'var(--border2)';
+
   document.getElementById('detail-title').textContent = story.title;
   document.getElementById('detail-desc').textContent = story.description || story.title;
-  document.getElementById('detail-link').href = story.url;
 
+  // External link — disable for demo stories
+  const linkEl = document.getElementById('detail-link');
+  const isDemo = story._demo || (story.url || '').includes('demo.orbit.news');
+  linkEl.href = isDemo ? '#' : story.url;
+  linkEl.classList.toggle('disabled', isDemo);
+  linkEl.textContent = isDemo ? '⊘ DEMO STORY (NO EXTERNAL URL)' : '↗ READ FULL STORY';
+
+  // Meta — use textContent to avoid XSS
   const metaEl = document.getElementById('detail-meta');
-  metaEl.innerHTML = `
-    <span>SOURCE</span><span style="color:var(--text)">${story.source?.name || 'Unknown'}</span>
-    <span>TYPE</span><span class="source-type-${story.source?.type || 'digital'}">${(story.source?.type || '').toUpperCase()}</span>
-    <span>COUNTRY</span><span style="color:var(--text)">${story.country || '??'}</span>
-    <span>REGION</span><span style="color:var(--text)">${story.region || '??'}</span>
-    <span>SEVERITY</span><span style="color:${SEV_COLOR[story.severity] || '#ccc'}">${(story.severity || '').toUpperCase()}</span>
-    <span>PUBLISHED</span><span style="color:var(--text)">${formatAge(story.publishedAt)} AGO</span>
-    <span>LANGUAGE</span><span style="color:var(--text)">${(story.language || '').toUpperCase()}</span>
-    <span>CLUSTER</span><span style="color:var(--accent)">${story.clusterSize || 1} SOURCES</span>
-  `;
+  metaEl.innerHTML = '';
+  const metaRows = [
+    ['SOURCE', story.source?.name || 'Unknown'],
+    ['TYPE', (story.source?.type || '').toUpperCase()],
+    ['COUNTRY', story.country || '??'],
+    ['REGION', story.region || '??'],
+    ['SEVERITY', (story.severity || '').toUpperCase()],
+    ['PUBLISHED', formatAge(story.publishedAt)],
+    ['LANGUAGE', (story.language || '').toUpperCase()],
+    ['CLUSTER', `${story.clusterSize || 1} SOURCES`],
+    ...(story.lat != null ? [['COORDS', formatCoords(story.lat, story.lng)]] : []),
+  ];
+  metaRows.forEach(([k, v]) => {
+    const key = document.createElement('span');
+    key.className = 'meta-key';
+    key.textContent = k;
+    const val = document.createElement('span');
+    if (k === 'SEVERITY') val.style.color = SEV_COLOR[story.severity] || 'var(--text)';
+    else if (k === 'TYPE') val.className = `source-type-${story.source?.type || 'digital'}`;
+    else val.style.color = 'var(--text)';
+    val.textContent = v;
+    metaEl.append(key, val);
+  });
 
+  // Topics
   const topicsEl = document.getElementById('detail-topics');
   topicsEl.innerHTML = '';
   (story.topics || []).forEach(t => {
-    const span = document.createElement('span');
-    span.className = 'topic-tag';
-    span.textContent = t;
-    topicsEl.appendChild(span);
+    const s = document.createElement('span');
+    s.className = 'topic-tag';
+    s.textContent = t;
+    topicsEl.appendChild(s);
   });
 
+  // Cluster
   const clusterSection = document.getElementById('detail-cluster');
   if (story.clusterSize > 1 && story.clusterId) {
     fetch('/orbit/cluster/' + story.clusterId)
@@ -735,13 +1129,18 @@ function openStoryDetail(story) {
           others.forEach(cs => {
             const div = document.createElement('div');
             div.className = 'cluster-story';
-            div.innerHTML = `<span style="color:var(--text3)">${cs.source?.name || '??'} — </span>${cs.title}`;
-            div.addEventListener('click', () => window.open(cs.url, '_blank'));
+            const src = document.createElement('span');
+            src.className = 'cluster-src';
+            src.textContent = (cs.source?.name || '??') + ' —';
+            const ttl = document.createElement('span');
+            ttl.textContent = cs.title;
+            div.append(src, ttl);
+            div.addEventListener('click', () => {
+              if (!isDemo) window.open(cs.url, '_blank', 'noopener');
+            });
             clusterList.appendChild(div);
           });
-        } else {
-          clusterSection.style.display = 'none';
-        }
+        } else { clusterSection.style.display = 'none'; }
       }).catch(() => { clusterSection.style.display = 'none'; });
   } else {
     clusterSection.style.display = 'none';
@@ -749,38 +1148,236 @@ function openStoryDetail(story) {
 
   document.getElementById('story-detail').classList.add('open');
 
+  // Pan globe or redraw flat map
   if (story.lat != null && story.lng != null && STATE.globe) {
+    STATE.globe.controls().autoRotate = false;
     STATE.globe.pointOfView({ lat: story.lat, lng: story.lng, altitude: 1.8 }, 1200);
+  }
+  if (STATE.flatMap) drawFlatMap(story);
+}
+
+document.getElementById('detail-close').addEventListener('click', closeModal);
+document.getElementById('story-detail').addEventListener('click', e => {
+  if (e.target === document.getElementById('story-detail')) closeModal();
+});
+
+function closeModal() {
+  document.getElementById('story-detail').classList.remove('open');
+  document.querySelectorAll('.story-card').forEach(c => c.classList.remove('active'));
+}
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const inInput = ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName);
+  if (e.key === 'Escape') {
+    closeModal();
+    document.getElementById('keyboard-help').classList.remove('open');
+    document.getElementById('q-help').classList.remove('visible');
+    document.getElementById('filter-panel').classList.remove('mobile-open');
+    if (document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+    return;
+  }
+  if (inInput) return;
+  if (e.key === '/' || e.key === 'f') { e.preventDefault(); document.getElementById('q').focus(); }
+  else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); fetchNews(true); }
+  else if (e.key === 'j' || e.key === 'J') navigateStory(1);
+  else if (e.key === 'k' || e.key === 'K') navigateStory(-1);
+  else if (e.key === '?') document.getElementById('keyboard-help').classList.toggle('open');
+});
+
+// ── FLAT MAP (CANVAS 2D FALLBACK) ─────────────────────────────────────────
+let flatCtx = null, flatCanvas = null;
+
+function initFlatMap() {
+  const area = document.getElementById('globe-area');
+  flatCanvas = document.createElement('canvas');
+  flatCanvas.id = 'flat-map-canvas';
+  flatCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:5';
+  const overlay = document.getElementById('globe-overlay');
+  area.insertBefore(flatCanvas, overlay);
+  flatCtx = flatCanvas.getContext('2d');
+  STATE.flatMap = true;
+
+  function resize() {
+    flatCanvas.width = area.clientWidth;
+    flatCanvas.height = area.clientHeight;
+    drawFlatMap();
+  }
+
+  flatCanvas.addEventListener('mousemove', e => {
+    const r = flatCanvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (flatCanvas.width / r.width);
+    const my = (e.clientY - r.top) * (flatCanvas.height / r.height);
+    let nearest = null, nearestD = 22;
+    STATE.allStories.forEach(s => {
+      if (s.lat == null || s.lng == null) return;
+      const { x, y } = project(s.lat, s.lng);
+      const d = Math.hypot(x - mx, y - my);
+      if (d < nearestD) { nearest = s; nearestD = d; }
+    });
+    if (nearest !== STATE.flatMapHovered) {
+      STATE.flatMapHovered = nearest;
+      flatCanvas.style.cursor = nearest ? 'pointer' : 'crosshair';
+      const hov = document.getElementById('info-hovered');
+      if (nearest) {
+        hov.innerHTML = `<span style="color:${SEV_COLOR[nearest.severity]||'#fff'}">[${(nearest.severity||'').toUpperCase()}]</span> ${escapeHtml(nearest.title?.slice(0,72))}`;
+      } else {
+        hov.textContent = '';
+      }
+      drawFlatMap(STATE.flatMapHovered);
+    }
+  });
+
+  flatCanvas.addEventListener('mouseleave', () => {
+    STATE.flatMapHovered = null;
+    document.getElementById('info-hovered').textContent = '';
+    drawFlatMap();
+  });
+
+  flatCanvas.addEventListener('click', e => {
+    if (STATE.flatMapHovered) {
+      openStoryDetail(STATE.flatMapHovered);
+    } else {
+      const r = flatCanvas.getBoundingClientRect();
+      const pct_x = (e.clientX - r.left) / r.width;
+      const pct_y = (e.clientY - r.top) / r.height;
+      const lng = pct_x * 360 - 180;
+      const lat = 90 - pct_y * 180;
+      document.getElementById('globe-coords').textContent = formatCoords(lat, lng);
+    }
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+}
+
+function project(lat, lng) {
+  if (!flatCanvas) return { x: 0, y: 0 };
+  return {
+    x: (lng + 180) / 360 * flatCanvas.width,
+    y: (90 - lat) / 180 * flatCanvas.height,
+  };
+}
+
+function drawFlatMap(hoveredStory) {
+  if (!flatCtx || !flatCanvas) return;
+  const w = flatCanvas.width, h = flatCanvas.height;
+  const ctx = flatCtx;
+
+  // Background
+  ctx.fillStyle = '#070c14';
+  ctx.fillRect(0, 0, w, h);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(26,45,74,0.45)';
+  ctx.lineWidth = 0.5;
+  for (let lat = -80; lat <= 80; lat += 20) {
+    const y = (90 - lat) / 180 * h;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(61,90,120,0.55)';
+    ctx.font = '8px Courier New';
+    if (lat !== 0) ctx.fillText(`${Math.abs(lat)}${lat > 0 ? 'N' : 'S'}`, 3, y - 2);
+  }
+  for (let lng = -160; lng <= 160; lng += 40) {
+    const x = (lng + 180) / 360 * w;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    ctx.fillStyle = 'rgba(61,90,120,0.55)';
+    ctx.font = '8px Courier New';
+    if (lng !== 0) ctx.fillText(`${Math.abs(lng)}${lng > 0 ? 'E' : 'W'}`, x + 2, h - 4);
+  }
+
+  // Equator (dashed blue)
+  ctx.setLineDash([5, 10]);
+  ctx.strokeStyle = 'rgba(0,170,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+  // Prime meridian
+  ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tropics
+  ctx.strokeStyle = 'rgba(255,204,0,0.07)';
+  ctx.lineWidth = 0.5;
+  [23.5, -23.5].forEach(lat => {
+    const y = (90 - lat) / 180 * h;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  });
+
+  // Vignette
+  const vig = ctx.createRadialGradient(w/2, h/2, h * 0.28, w/2, h/2, h * 0.7);
+  vig.addColorStop(0, 'transparent');
+  vig.addColorStop(1, 'rgba(7,12,20,0.65)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, w, h);
+
+  // ORBIT watermark
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,170,255,0.025)';
+  ctx.font = `bold ${Math.floor(h * 0.14)}px Courier New`;
+  ctx.textAlign = 'center';
+  ctx.fillText('ORBIT', w / 2, h / 2 + h * 0.055);
+  ctx.restore();
+
+  // Story pins (non-hovered first)
+  STATE.allStories.forEach(story => {
+    if (story.lat == null || story.lng == null) return;
+    if (story === hoveredStory) return;
+    const { x, y } = project(story.lat, story.lng);
+    const color = SEV_COLOR[story.severity] || '#00aaff';
+    const r = story.severity === 'critical' ? 4.5 : story.severity === 'high' ? 3.5 : 2.5;
+
+    if (story.severity === 'critical' || story.severity === 'high') {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4.5);
+      g.addColorStop(0, color + '44');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r * 4.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // Hovered pin (on top)
+  const hov = hoveredStory || STATE.flatMapHovered;
+  if (hov && hov.lat != null) {
+    const { x, y } = project(hov.lat, hov.lng);
+    const color = SEV_COLOR[hov.severity] || '#00aaff';
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 28);
+    g.addColorStop(0, color + '77');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, 28, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+
+    // Crosshair
+    ctx.strokeStyle = color + '66';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(x - 20, y); ctx.lineTo(x - 7, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 7, y); ctx.lineTo(x + 20, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - 20); ctx.lineTo(x, y - 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 7); ctx.lineTo(x, y + 20); ctx.stroke();
   }
 }
 
-document.getElementById('detail-close').addEventListener('click', () => {
-  document.getElementById('story-detail').classList.remove('open');
-  document.querySelectorAll('.story-card').forEach(c => c.classList.remove('active'));
-});
-document.getElementById('story-detail').addEventListener('click', e => {
-  if (e.target === document.getElementById('story-detail')) {
-    document.getElementById('story-detail').classList.remove('open');
-  }
-});
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('story-detail').classList.remove('open');
-});
-
-// ── GLOBE ──────────────────────────────────────────────────────────────────
+// ── GLOBE ─────────────────────────────────────────────────────────────────
 function hideLoadingScreen() {
   const ls = document.getElementById('loading-screen');
-  ls.style.opacity = '0';
-  ls.style.transition = 'opacity 0.8s';
-  setTimeout(() => { ls.style.display = 'none'; }, 800);
+  if (!ls) return;
+  ls.style.display = 'none';
 }
 
 function initGlobe() {
   const container = document.getElementById('globe-container');
   if (!window.Globe) {
-    console.warn('globe.gl not loaded — showing fallback');
-    document.getElementById('loading-screen').innerHTML = '<div class="loading-title" style="font-size:14px;letter-spacing:4px;color:var(--accent)">ORBIT</div><div class="loading-sub" style="margin-top:8px">GLOBE ENGINE UNAVAILABLE</div><div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-top:8px">INTELLIGENCE FEED ACTIVE →</div>';
-    setTimeout(hideLoadingScreen, 1500);
+    initFlatMap();
+    hideLoadingScreen();
     return;
   }
 
@@ -788,11 +1385,12 @@ function initGlobe() {
   try {
     globe = Globe()(container);
   } catch (e) {
-    console.warn('Globe init failed (WebGL unavailable):', e.message);
-    document.getElementById('loading-screen').innerHTML = '<div class="loading-title" style="font-size:14px;letter-spacing:4px;color:var(--accent)">ORBIT</div><div class="loading-sub" style="margin-top:8px">GLOBE: WebGL required</div><div style="font-size:9px;color:var(--text3);letter-spacing:2px;margin-top:8px">INTELLIGENCE FEED ACTIVE →</div>';
-    setTimeout(hideLoadingScreen, 1500);
+    console.warn('[ORBIT] Globe WebGL failed:', e.message);
+    initFlatMap();
+    hideLoadingScreen();
     return;
   }
+
   STATE.globe = globe;
 
   globe
@@ -804,7 +1402,8 @@ function initGlobe() {
     .atmosphereColor('#0066cc')
     .atmosphereAltitude(0.12)
     .pointsData([])
-    .pointAltitude(d => Math.min(0.08, (d.clusterSize || 1) * 0.008 + 0.01))
+    .pointLat('lat').pointLng('lng')
+    .pointAltitude(d => Math.min(0.09, (d.clusterSize || 1) * 0.009 + 0.01))
     .pointColor(d => SEV_COLOR[d.severity] || '#00aaff')
     .pointRadius(d => {
       const base = d.severity === 'critical' ? 0.45 : d.severity === 'high' ? 0.35 : 0.25;
@@ -812,70 +1411,67 @@ function initGlobe() {
     })
     .pointResolution(8)
     .pointsMerge(false)
-    .onPointClick(d => openStoryDetail(d))
+    .onPointClick(d => {
+      STATE.globe.controls().autoRotate = false;
+      openStoryDetail(d);
+    })
     .onPointHover(d => {
       container.style.cursor = d ? 'pointer' : 'default';
-      const hoverEl = document.getElementById('info-hovered');
+      const hov = document.getElementById('info-hovered');
       if (d) {
-        hoverEl.innerHTML = `<span style="color:${SEV_COLOR[d.severity]||'#fff'}">[${d.severity?.toUpperCase()}]</span> ${d.title?.slice(0, 60)}...`;
+        hov.innerHTML = `<span style="color:${SEV_COLOR[d.severity]||'#fff'}">[${(d.severity||'').toUpperCase()}]</span> ${escapeHtml((d.title||'').slice(0, 70))}`;
       } else {
-        hoverEl.textContent = '';
+        hov.textContent = '';
       }
     })
     .onGlobeClick(({ lat, lng }) => {
-      document.getElementById('globe-coords').textContent = `${lat.toFixed(2)}°N ${lng.toFixed(2)}°E`;
-    });
-
-  // Rings for critical stories
-  globe
+      document.getElementById('globe-coords').textContent = formatCoords(lat, lng);
+    })
     .ringsData([])
-    .ringColor(d => SEV_RING[d.severity] || '#ff1a3d')
+    .ringColor(d => SEV_COLOR[d.severity] || '#ff1a3d')
     .ringMaxRadius(d => d.severity === 'critical' ? 4 : 2)
     .ringPropagationSpeed(d => d.severity === 'critical' ? 1.5 : 0.8)
     .ringRepeatPeriod(d => d.severity === 'critical' ? 1200 : 2400);
 
-  globe.controls().autoRotate = true;
-  globe.controls().autoRotateSpeed = 0.3;
-  globe.controls().enableDamping = true;
+  const controls = globe.controls();
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.28;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
 
-  // Initial pov
-  globe.pointOfView({ lat: 20, lng: 10, altitude: 2.0 });
-
-  // Hide loading screen
-  setTimeout(hideLoadingScreen, 500);
-
-  window.addEventListener('resize', () => globe.width(container.clientWidth).height(container.clientHeight));
+  globe.pointOfView({ lat: 22, lng: 10, altitude: 2.0 });
+  setTimeout(hideLoadingScreen, 600);
+  window.addEventListener('resize', () => {
+    globe.width(container.clientWidth).height(container.clientHeight);
+  });
 }
 
 function updateGlobeData() {
-  if (!STATE.globe) return;
   const stories = STATE.allStories.filter(s => s.lat != null && s.lng != null);
-  STATE.globe.pointsData(stories);
-  const criticalRings = stories.filter(s => s.severity === 'critical' || s.severity === 'high');
-  STATE.globe.ringsData(criticalRings.slice(0, 20));
-}
-
-// ── FORMAT HELPERS ─────────────────────────────────────────────────────────
-function formatAge(isoString) {
-  if (!isoString) return '??';
-  const diff = (Date.now() - new Date(isoString).getTime()) / 1000;
-  if (diff < 60) return `${Math.floor(diff)}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
-}
-
-// ── INIT ───────────────────────────────────────────────────────────────────
-function init() {
-  if (!window.Globe) {
-    setTimeout(() => {
-      if (window.Globe) { initGlobe(); } else { document.getElementById('loading-screen').querySelector('.loading-sub').textContent = 'Globe engine unavailable. News feed active →'; }
-    }, 3000);
-  } else {
-    initGlobe();
+  if (STATE.globe) {
+    STATE.globe.pointsData(stories);
+    const rings = stories.filter(s => s.severity === 'critical' || s.severity === 'high');
+    STATE.globe.ringsData(rings.slice(0, 20));
   }
+  if (STATE.flatMap) drawFlatMap();
+}
+
+// ── AUTO-REFRESH ──────────────────────────────────────────────────────────
+function startAutoRefresh() {
+  if (STATE.refreshTimer) clearInterval(STATE.refreshTimer);
+  STATE.refreshTimer = setInterval(() => {
+    if (!document.hidden) fetchNews();
+  }, STATE.REFRESH_INTERVAL);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+function init() {
+  updateFilterBadge();
+  document.getElementById('result-count').textContent = '';
+  // Initialise globe synchronously so the loading screen hides before first paint
+  initGlobe();
   fetchNews();
-  setInterval(() => fetchNews(), 5 * 60 * 1000);
+  startAutoRefresh();
 }
 
 if (document.readyState === 'loading') {
@@ -883,6 +1479,10 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+// Expose for inline onclick
+window.fetchNews = fetchNews;
+window.resetFilters = resetFilters;
 
 })();
 </script>
